@@ -9,26 +9,19 @@
 #include <arpa/inet.h> // For htons() function
 #include <unistd.h> // For close() function
 
-#define MAX_CHARACTERS 360
-
-char server_ip[MAX_CHARACTERS];
+// Personal includes
+#include "./main.h"
+#include "./config/env.h"
 
 
 int main(int argc, char *argv[]) {
     // Define a socket, port
-    int sockfd, port;
+    int sockfd;
     // Define a structure to hold the server address information
     struct sockaddr_in server_addr;
 
-    // Get the PORT, SERVERIP through environment variable
-    const char *port_env = getenv("PORT");
-    const char *server_ip_env = getenv("SERVERIP");
-    if (!port_env || !server_ip_env) {
-        printf("The PORT and SERVERIP environment variables must be set.\n");
-        exit(0);
-    }
-    port = atoi(port_env); // Convert the port to an integer
-    strcpy(server_ip, server_ip_env); // Copy the server_ip_env to the server_ip variable
+    // Load environment variables
+    load_env_variables();
 
     // Initialize the created socket
     sockfd = socket(AF_INET, SOCK_DGRAM, 0); // AF_INET: IPv4, SOCK_DGRAM: UDP
