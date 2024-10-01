@@ -70,6 +70,24 @@ gcc -o bin/client ./src/client.c ./src/config/env.c
 ./bin/client
 ```
 
+## Testing
+
+To test the server or the client you can execute the server.sh or client.sh scripts respectively. These scripts will compile the server or the client and run them. You just need to follow the next steps:
+
+1. **.env File Configuration**: Make sure you have the `.env` file configured with the desired environment variables in the project root directory.
+
+2. **Server Testing**: To test the server, run the following command:
+
+```bash
+./server.sh
+```
+
+3. **Client Testing**: To test the client, run the following command:
+
+```bash
+./client.sh
+```
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.

@@ -57,3 +57,6 @@ dkms.conf
 # Build files
 bin/
 build/
+
+# Environment files
+.env
