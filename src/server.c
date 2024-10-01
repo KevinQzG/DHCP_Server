@@ -29,7 +29,7 @@ void* proccess_client_connection(void* arg){
 
     // Example: Send a basic response (this is just a placeholder, actual DHCP response would be more complex)
     const char *response = "DHCP server response";
-    sendto(sockfd, response, strlen(response), 0, (struct sockaddr *) &client_addr, client_addr_len);
+    sendto(sockfd, response, strlen(response), 0, (SOCKET_ADDRESS*) &client_addr, client_addr_len);
 
     // Free the client_data_t structure that was dynamically allocated
     free(data);
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     server_addr.sin_port = htons(port);  // Convert port number to network byte order (port 67 for DHCP server)
 
     // Bind the socket to the port
-    if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    if (bind(sockfd, (SOCKET_ADDRESS*)&server_addr, sizeof(server_addr)) < 0) {
         printf("Socket Bind failed.\n");
         close(sockfd);
         exit(0);
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
         memset(buffer, 0, BUFFER_SIZE);
 
         // Receive a message from the client
-        int recv_len = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *) &client_addr, &client_addr_len);
+        int recv_len = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (SOCKET_ADDRESS*) &client_addr, &client_addr_len);
         if (recv_len < 0) {
             printf("Failed to receive data.\n");
             continue;

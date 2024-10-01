@@ -4,9 +4,9 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#define SERVER_IP "172.26.70.2" // Replace with the server's actual IP address
-#define SERVER_PORT 8080        // Replace with your server's port
-#define BUFFER_SIZE 1024
+// Personal includes
+#include "./client.h"
+#include "./config/env.h"
 
 int main() {
     int sockfd;
@@ -14,21 +14,28 @@ int main() {
     char buffer[BUFFER_SIZE] = "Hello from UDP client!";
     socklen_t addr_len = sizeof(server_addr);
 
-    // Create socket
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    // Load environment variables
+    load_env_variables();
+
+    // Initialize the created socket
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0); // AF_INET: IPv4, SOCK_DGRAM: UDP
+
+    // Check if the socket was created successfully
     if (sockfd < 0) {
-        printf("Failed to create socket.\n");
-        return -1;
+        printf("Socket creation failed.\n");
+        exit(0);
+    } else {
+        printf("Socket created successfully.\n");
     }
 
-    // Set up server address
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(SERVER_PORT);
-    server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
+    // Set the bytes in memory for the server_addr structure to 0
+    memset(&server_addr, 0, sizeof(server_addr));  // Zero out the structure
+    server_addr.sin_family = AF_INET;  // IPv4
+    server_addr.sin_addr.s_addr = inet_addr(server_ip);  // Accept connections from the specified server IP not other IPS or interfaces
+    server_addr.sin_port = htons(port);  // Convert port number to network byte order (port 67 for DHCP server)
 
     // Send message to server
-    int sent_bytes = sendto(sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&server_addr, addr_len);
+    int sent_bytes = sendto(sockfd, buffer, strlen(buffer), 0, (SOCKET_ADDRESS*)&server_addr, addr_len);
     if (sent_bytes < 0) {
         printf("Failed to send message to server.\n");
         close(sockfd);
@@ -39,7 +46,7 @@ int main() {
 
     // Receive server's response
     memset(buffer, 0, BUFFER_SIZE);
-    int recv_len = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&server_addr, &addr_len);
+    int recv_len = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (SOCKET_ADDRESS*)&server_addr, &addr_len);
     if (recv_len > 0) {
         printf("Server response: %s\n", buffer);
     } else {
