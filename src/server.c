@@ -31,6 +31,7 @@ void end_program() {
 }
 
 void handle_signal_interrupt(int signal) {
+    printf("\n");
     printf("Signal %d received.\n", signal);
 
     // Call the function to close the socket and exit the program

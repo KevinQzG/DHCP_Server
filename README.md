@@ -88,6 +88,11 @@ To test the server or the client you can execute the server.sh or client.sh scri
 ./client.sh
 ```
 
+## References
+
+- [Berkeley Sockets API](https://en.wikipedia.org/wiki/Berkeley_sockets)
+- [Dynamic Host Configuation Protocol (DHCP) Message Options](https://www.omnisecu.com/tcpip/dhcp-dynamic-host-configuration-protocol-message-options.php#:~:text=Message%20Type%20indicates%20the%20DHCP%20message%20and%20can,Dynamic%20Host%20Configuration%20Protocol%20%28DHCP%29%20Request%20message%20%28DHCPRequest%29.)
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
