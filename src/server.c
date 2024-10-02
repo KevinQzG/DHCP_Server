@@ -8,6 +8,9 @@
 #include <arpa/inet.h> // For htons() function
 #include <unistd.h> // For close() function
 
+// Include for Signal Handling
+#include <signal.h>
+
 // Includes for threads
 #include <pthread.h>
 
@@ -15,12 +18,31 @@
 #include "./server.h"
 #include "./config/env.h"
 
+// Define the socket variable in a global scope so that it can be accessed by the signal handler
+int sockfd;
+
+void end_program() {
+    // Close the socket just if it was created
+    if (sockfd >= 0){
+        close(sockfd);
+    }
+    printf("Exiting...\n");
+    exit(0);
+}
+
+void handle_signal_interrupt(int signal) {
+    printf("Signal %d received.\n", signal);
+
+    // Call the function to close the socket and exit the program
+    end_program();
+}
+
 void* proccess_client_connection(void* arg){
     client_data_t* data = (client_data_t*)arg;
     char* buffer = data->buffer;
     struct sockaddr_in client_addr = data->client_addr;
     socklen_t client_addr_len = data->client_addr_len;
-    int sockfd = data->sockfd;
+    int connection_sockfd = data->sockfd;
 
     printf("Processing DHCP message from client %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
@@ -29,7 +51,7 @@ void* proccess_client_connection(void* arg){
 
     // Example: Send a basic response (this is just a placeholder, actual DHCP response would be more complex)
     const char *response = "DHCP server response";
-    sendto(sockfd, response, strlen(response), 0, (SOCKET_ADDRESS*) &client_addr, client_addr_len);
+    sendto(connection_sockfd, response, strlen(response), 0, (SOCKET_ADDRESS*) &client_addr, client_addr_len);
 
     // Free the client_data_t structure that was dynamically allocated
     free(data);
@@ -38,8 +60,6 @@ void* proccess_client_connection(void* arg){
 }
 
 int main(int argc, char *argv[]) {
-    // Define a socket, port
-    int sockfd;
     // Define a structure to hold the server address information
     struct sockaddr_in server_addr, client_addr;    
     // String buffer to hold incoming messages
@@ -49,6 +69,9 @@ int main(int argc, char *argv[]) {
 
     // Load environment variables
     load_env_variables();
+
+    // Register the signal handler for SIGINT (CTRL+C)
+    signal(SIGINT, handle_signal_interrupt);
 
     // Initialize the created socket
     sockfd = socket(AF_INET, SOCK_DGRAM, 0); // AF_INET: IPv4, SOCK_DGRAM: UDP
@@ -117,6 +140,7 @@ int main(int argc, char *argv[]) {
         pthread_detach(thread_id);
     }
 
-    close(sockfd);
+    // Call the function to close the socket and exit the program
+    end_program();
     return 0;
 }

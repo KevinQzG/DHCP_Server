@@ -1,21 +1,50 @@
+// Essential includes for c programs
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+
+// Includes for socket creation
+#include <sys/socket.h>  // For socket creation
+#include <arpa/inet.h> // For htons() function
+#include <unistd.h> // For close() function
+
+// Include for Signal Handling
+#include <signal.h>
 
 // Personal includes
 #include "./client.h"
 #include "./config/env.h"
 
+// Define the socket variable in a global scope so that it can be accessed by the signal handler
+int sockfd;
+
+void end_program() {
+    // Close the socket just if it was created
+    if (sockfd >= 0){
+        close(sockfd);
+    }
+    printf("Exiting...\n");
+    exit(0);
+}
+
+void handle_signal_interrupt(int signal) {
+    printf("\n");
+    printf("Signal %d received.\n", signal);
+
+    // Call the function to close the socket and exit the program
+    end_program();
+}
+
 int main() {
-    int sockfd;
     struct sockaddr_in server_addr;
     char buffer[BUFFER_SIZE] = "Hello from UDP client!";
     socklen_t addr_len = sizeof(server_addr);
 
     // Load environment variables
     load_env_variables();
+
+    // Register the signal handler for SIGINT (CTRL+C)
+    signal(SIGINT, handle_signal_interrupt);
 
     // Initialize the created socket
     sockfd = socket(AF_INET, SOCK_DGRAM, 0); // AF_INET: IPv4, SOCK_DGRAM: UDP
@@ -53,7 +82,7 @@ int main() {
         printf("Failed to receive response from server.\n");
     }
 
-    // Close the socket
-    close(sockfd);
+    // Call the function to close the socket and exit the program
+    end_program();
     return 0;
 }
