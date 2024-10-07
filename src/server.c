@@ -17,6 +17,7 @@
 // Personal includes
 #include "./server.h"
 #include "./config/env.h"
+#include "./data/message.h"
 
 // Define the socket variable in a global scope so that it can be accessed by the signal handler
 int sockfd;
@@ -49,6 +50,19 @@ void* proccess_client_connection(void* arg){
 
     // Here you would process the DHCP message and respond appropriately.
     // You can parse the DHCP message here and decide whether to send a DHCPOFFER or another DHCP message.
+    
+    // Create a DHCP message structure to hold the parsed data
+    dhcp_message_t dhcp_msg;
+
+    // Call the parse function to convert the raw buffer into the dhcp_message_t structure
+    if (parse_dhcp_message((uint8_t*)buffer, &dhcp_msg) != 0) {
+        printf("Failed to parse DHCP message.\n");
+        free(data);
+        return NULL;
+    }
+
+    // Call the print function to display the parsed message
+    print_dhcp_message(&dhcp_msg);
 
     // Example: Send a basic response (this is just a placeholder, actual DHCP response would be more complex)
     const char *response = "DHCP server response";

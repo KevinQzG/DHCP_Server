@@ -14,7 +14,7 @@ mkdir -p bin
 
 # Step 3: Compile the server code
 echo "Compiling DHCP server..."
-gcc -o bin/server ./src/server.c ./src/config/env.c -lpthread
+gcc -o bin/server ./src/server.c ./src/config/env.c ./src/data/message.c -lpthread
 
 # Step 4: Run the server
 echo "Running DHCP server..."

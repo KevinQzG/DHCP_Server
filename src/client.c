@@ -14,6 +14,7 @@
 // Personal includes
 #include "./client.h"
 #include "./config/env.h"
+#include "./data/message.h"
 
 // Define the socket variable in a global scope so that it can be accessed by the signal handler
 int sockfd;
@@ -37,7 +38,6 @@ void handle_signal_interrupt(int signal) {
 
 int main() {
     struct sockaddr_in server_addr;
-    char buffer[BUFFER_SIZE] = "Hello from UDP client!";
     socklen_t addr_len = sizeof(server_addr);
 
     // Load environment variables
@@ -63,8 +63,18 @@ int main() {
     server_addr.sin_addr.s_addr = inet_addr(server_ip);  // Accept connections from the specified server IP not other IPS or interfaces
     server_addr.sin_port = htons(port);  // Convert port number to network byte order (port 67 for DHCP server)
 
+    dhcp_message_t msg;
+    uint8_t buffer[sizeof(dhcp_message_t)];
+
+    // Initialize a DHCP Discover message
+    init_dhcp_message(&msg);
+    set_dhcp_message_type(&msg, DHCP_DISCOVER);
+
+    // Serialize the message to a buffer
+    build_dhcp_message(&msg, buffer);
+
     // Send message to server
-    int sent_bytes = sendto(sockfd, buffer, strlen(buffer), 0, (SOCKET_ADDRESS*)&server_addr, addr_len);
+    int sent_bytes = sendto(sockfd, buffer, sizeof(buffer), 0, (SOCKET_ADDRESS*)&server_addr, addr_len);
     if (sent_bytes < 0) {
         printf("Failed to send message to server.\n");
         close(sockfd);
