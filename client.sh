@@ -14,7 +14,7 @@ mkdir -p bin
 
 # Step 3: Compile the client code
 echo "Compiling DHCP client..."
-gcc -o bin/client ./src/client.c ./src/config/env.c ./src/data/message.c
+gcc -o bin/client ./src/client.c ./src/config/env.c ./src/data/message.c -lsqlite3
 
 # Step 4: Run the client
 echo "Running DHCP client..."

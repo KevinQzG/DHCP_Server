@@ -2,6 +2,7 @@
 #define MESSAGE_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define DHCP_OPTIONS_LENGTH 312 // Maximum length of DHCP options field
 #define HARDWARE_ADDR_LEN 16 // Maximum length of hardware address (MAC address)
@@ -46,10 +47,13 @@ void init_dhcp_message(dhcp_message_t *msg);
 int parse_dhcp_message(const uint8_t *buffer, dhcp_message_t *msg);
 
 // Function to serialize a dhcp_message_t structure into a raw byte buffer
-int build_dhcp_message(const dhcp_message_t *msg, uint8_t *buffer);
+int build_dhcp_message(const dhcp_message_t *msg, uint8_t *buffer, size_t buffer_size);
 
 // Function to set the DHCP message type in the options field
-void set_dhcp_message_type(dhcp_message_t *msg, uint8_t type);
+int set_dhcp_message_type(dhcp_message_t *msg, uint8_t type);
+
+// Function to parse the options field of a DHCP message
+void parse_dhcp_options(const uint8_t *options, size_t options_length);
 
 // Function to print the contents of a DHCP message
 void print_dhcp_message(const dhcp_message_t *msg);

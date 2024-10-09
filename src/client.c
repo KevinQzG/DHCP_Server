@@ -71,7 +71,7 @@ int main() {
     set_dhcp_message_type(&msg, DHCP_DISCOVER);
 
     // Serialize the message to a buffer
-    build_dhcp_message(&msg, buffer);
+    build_dhcp_message(&msg, buffer, sizeof(buffer));
 
     // Send message to server
     int sent_bytes = sendto(sockfd, buffer, sizeof(buffer), 0, (SOCKET_ADDRESS*)&server_addr, addr_len);
