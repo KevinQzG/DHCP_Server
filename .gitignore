@@ -60,3 +60,7 @@ build/
 
 # Environment files
 .env
+
+# Database files
+*.sqlite3
+*.db

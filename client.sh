@@ -5,7 +5,6 @@ if [ -f .env ]; then
     export $(grep -v '^#' .env | xargs)
 else
     echo ".env file not found!"
-    exit 1
 fi
 
 # Step 2: Create and navigate to the build directory

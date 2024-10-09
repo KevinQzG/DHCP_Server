@@ -18,6 +18,7 @@
 #include "./server.h"
 #include "./config/env.h"
 #include "./data/message.h"
+#include "./config/db.h"
 
 // Define the socket variable in a global scope so that it can be accessed by the signal handler
 int sockfd;
@@ -84,6 +85,7 @@ int main(int argc, char *argv[]) {
 
     // Load environment variables
     load_env_variables();
+    init_db();
 
     // Register the signal handler for SIGINT (CTRL+C)
     signal(SIGINT, handle_signal_interrupt);
