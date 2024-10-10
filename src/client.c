@@ -7,7 +7,12 @@
 #include <signal.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-#ifdef __APPLE__
+#ifdef _WIN32
+#include <winsock2.h>
+#include <iphlpapi.h>
+#pragma comment(lib, "iphlpapi.lib")
+#pragma comment(lib, "ws2_32.lib")
+#elif __APPLE__
 #include <net/if_dl.h>  // Para sockaddr_dl y la estructura de enlace de nivel de datos en macOS
 #include <ifaddrs.h>    // Para obtener la lista de interfaces en macOS
 #else
@@ -24,7 +29,33 @@ int sockfd;
 
 // Function to retrieve the MAC address of a network interface (cross-platform)
 int get_mac_address(uint8_t *mac, const char *iface) {
-#ifdef __APPLE__
+#ifdef _WIN32
+    // Código para Windows
+    PIP_ADAPTER_INFO adapterInfo;
+    DWORD bufferSize = sizeof(IP_ADAPTER_INFO);
+    adapterInfo = (IP_ADAPTER_INFO *)malloc(bufferSize);
+
+    if (GetAdaptersInfo(adapterInfo, &bufferSize) == ERROR_BUFFER_OVERFLOW) {
+        free(adapterInfo);
+        adapterInfo = (IP_ADAPTER_INFO *)malloc(bufferSize);
+    }
+
+    if (GetAdaptersInfo(adapterInfo, &bufferSize) == NO_ERROR) {
+        PIP_ADAPTER_INFO adapter = adapterInfo;
+        while (adapter) {
+            if (strcmp(adapter->AdapterName, iface) == 0) {
+                memcpy(mac, adapter->Address, adapter->AddressLength);
+                free(adapterInfo);
+                return 0;
+            }
+            adapter = adapter->Next;
+        }
+    }
+    free(adapterInfo);
+    printf("Failed to find MAC address for interface %s\n", iface);
+    return -1;
+
+#elif __APPLE__
     // Código para macOS
     struct ifaddrs *ifap, *ifa;
     struct sockaddr_dl *sdl;
@@ -120,7 +151,7 @@ int main() {
     set_dhcp_message_type(&msg, DHCP_DISCOVER);
 
     // Retrieve and set the client's MAC address in the DHCP message
-    if (get_mac_address(msg.chaddr, "en0") == 0) { // "en0" es común para interfaces en macOS, "eth0" para Linux
+    if (get_mac_address(msg.chaddr, "en0") == 0) { // "en0" es común para interfaces en macOS, "eth0" para Linux, adapter name for Windows
         msg.hlen = 6; // Longitud de la dirección MAC
     } else {
         printf("Failed to set MAC address.\n");
