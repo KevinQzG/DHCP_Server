@@ -2,9 +2,13 @@
 
 # Step 1: Load environment variables from .env file
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    # Source the .env file to handle variables with spaces correctly
+    set -a    # Automatically export all variables
+    source .env
+    set +a    # Stop automatically exporting variables
 else
     echo ".env file not found!"
+    exit 1
 fi
 
 # Step 2: Create and navigate to the build directory

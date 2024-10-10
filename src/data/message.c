@@ -3,11 +3,11 @@
 #include <stddef.h>   // For offsetof
 #include <string.h> // For memset, memcpy
 #include <stdio.h>  // For debugging purposes
+#include <time.h> // For time()
+#include <stdlib.h>  // For srand and rand
 
 #include <arpa/inet.h> // For htonl, ntohl, htons, ntohs
 
-// Global variable to store the transaction ID (xid)
-static uint32_t global_xid = 0;
 
 // Function to initialize a DHCP message structure with default values
 void init_dhcp_message(dhcp_message_t *msg) {
@@ -18,8 +18,11 @@ void init_dhcp_message(dhcp_message_t *msg) {
     msg->hlen = 6;  // MAC address length
     msg->hops = 0;  // Hops (usually 0 for clients)
 
-    // Increment the global xid for each message to ensure uniqueness
-    msg->xid = global_xid++;
+    // Seed the random number generator with the current time (only done once)
+    srand((unsigned int)time(NULL)); 
+
+    // Use a random transaction ID
+    msg->xid = rand(); 
     msg->secs = 0;   // No seconds elapsed
     msg->flags = htons(0x8000); // Broadcast flag set
 }
