@@ -7,6 +7,7 @@
 // Definir el pool de IPs como un puntero para que sea dinámico
 ip_pool_entry_t* ip_pool = NULL;
 int pool_size = 0;
+char gateway_ip[16];  // Dirección IP del gateway (será la primera IP del rango)
 
 // Función para calcular el tamaño del pool de direcciones IP basado en el rango dinámico
 int calculate_pool_size(char* start_ip, char* end_ip) {
@@ -26,7 +27,6 @@ unsigned int ip_to_int(const char* ip) {
 void int_to_ip(unsigned int ip, char* buffer) {
     sprintf(buffer, "%u.%u.%u.%u", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF);
 }
-
 
 // Función para inicializar el pool de IPs basado en el rango
 void init_ip_pool() {
@@ -50,6 +50,9 @@ void init_ip_pool() {
         return;
     }
 
+    // Asignar la primera IP del rango como gateway
+    strncpy(gateway_ip, start_ip, sizeof(gateway_ip));
+
     // Convertir las IPs de inicio y fin a enteros
     unsigned int start = ip_to_int(start_ip);
     unsigned int end = ip_to_int(end_ip);
@@ -64,15 +67,24 @@ void init_ip_pool() {
         ip_pool[i].is_assigned = 0;  // Marcar como no asignada
         i++;
     }
+
+    printf("Gateway IP set to: %s\n", gateway_ip);  // Mostrar la IP del gateway
 }
 
-// Función para asignar una IP disponible del pool
+char* get_gateway_ip() {
+    return gateway_ip;  // Retornar la dirección del gateway
+}
+
+
+
 char* assign_ip() {
     for (int i = 0; i < pool_size; i++) {
-        if (ip_pool[i].is_assigned == 0) {  // Si la IP está libre
-            ip_pool[i].is_assigned = 1;     // Marcarla como asignada
+        // Verificar que la IP no sea la misma que la del gateway
+        if (ip_pool[i].is_assigned == 0 && strcmp(ip_pool[i].ip_address, get_gateway_ip()) != 0) {
+            ip_pool[i].is_assigned = 1;     // Marcar la IP como asignada
             return ip_pool[i].ip_address;   // Retornar la IP asignada
         }
     }
     return NULL;  // Si no hay IPs disponibles
 }
+
