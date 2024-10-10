@@ -20,8 +20,7 @@
 #include "./data/message.h"
 #include "./config/db.h"
 #include <time.h>  // Para generar números aleatorios con srand() y rand()
-#include "./data/ip_pool.h"
-
+#include "data/ip_pool.h"
 
 // Define the socket variable in a global scope so that it can be accessed by the signal handler
 int sockfd;
@@ -30,13 +29,17 @@ int sockfd;
 void send_dhcpoffer(int socket_fd, struct sockaddr_in* client_addr, dhcp_message_t* discover_message);
 
 
-void end_program()
-{
+void end_program() {
     // Close the socket just if it was created
-    if (sockfd >= 0)
-    {
+    if (sockfd >= 0) {
         close(sockfd);
     }
+    
+    // Liberar la memoria asignada al pool de IPs
+    if (ip_pool != NULL) {
+        free(ip_pool);
+    }
+
     printf("Exiting...\n");
     exit(0);
 }
@@ -123,7 +126,7 @@ int main(int argc, char *argv[])
     // Register the signal handler for SIGINT (CTRL+C)
     signal(SIGINT, handle_signal_interrupt);
 
-    init_ip_pool();  // Inicializar el pool de IPs
+    init_ip_pool();
 
     // Initialize the created socket
     sockfd = socket(AF_INET, SOCK_DGRAM, 0); // AF_INET: IPv4, SOCK_DGRAM: UDP
@@ -205,11 +208,11 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-// Función para generar una Gateway IP aleatoria dentro del rango 192.168.1.[1-254]
+// Función para asignar una Gateway IP fija como 192.168.1.1
 void generate_dynamic_gateway_ip(char* gateway_ip, size_t size) {
-    int last_octet = (rand() % 254) + 1;  // Genera un número entre 1 y 254
-    snprintf(gateway_ip, size, "192.168.1.%d", last_octet);
+    snprintf(gateway_ip, size, "192.168.1.1");  // Asigna 192.168.1.1 como la Gateway IP fija
 }
+
 
 void send_dhcpoffer(int socket_fd, struct sockaddr_in* client_addr, dhcp_message_t* discover_message) {
     dhcp_message_t offer_message;
