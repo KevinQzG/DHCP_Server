@@ -150,8 +150,18 @@ int main() {
     init_dhcp_message(&msg);
     set_dhcp_message_type(&msg, DHCP_DISCOVER);
 
+    // Set the correct network interface for each OS
+    const char *iface;
+#ifdef _WIN32
+    iface = "Ethernet"; // Nombre común en Windows, cambiar según sea necesario
+#elif __APPLE__
+    iface = "en0"; // Interfaz típica en macOS
+#else
+    iface = "eth0"; // O cambiar a "enp3s0" según tu sistema
+#endif
+
     // Retrieve and set the client's MAC address in the DHCP message
-    if (get_mac_address(msg.chaddr, "en0") == 0) { // "en0" es común para interfaces en macOS, "eth0" para Linux, adapter name for Windows
+    if (get_mac_address(msg.chaddr, iface) == 0) {
         msg.hlen = 6; // Longitud de la dirección MAC
     } else {
         printf("Failed to set MAC address.\n");
