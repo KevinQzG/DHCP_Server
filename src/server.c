@@ -183,37 +183,55 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in* client_addr, dhcp_message
         return;
     }
 
+    // Asignar una IP disponible para el cliente
     char *assigned_ip = assign_ip();
     if (!assigned_ip) {
         printf("No IP available to offer.\n");
         return;
     }
 
+    // Asignar la IP al campo 'yiaddr' (Your IP)
     inet_pton(AF_INET, assigned_ip, &offer_message.yiaddr);
+
+    // Asignar la IP del servidor (SERVER_IP) al campo 'siaddr'
     inet_pton(AF_INET, server_ip, &offer_message.siaddr);
+
+    // Dejar la IP del cliente 'ciaddr' como 0.0.0.0 (el cliente no tiene IP asignada al enviar DHCP_DISCOVER)
     inet_pton(AF_INET, "0.0.0.0", &offer_message.ciaddr);
 
+    // Generar la IP del gateway dinámicamente desde el rango de IPs
     char dynamic_gateway_ip[16];
     generate_dynamic_gateway_ip(dynamic_gateway_ip, sizeof(dynamic_gateway_ip));
+
+    // Asignar la IP del gateway al campo 'giaddr' (Gateway IP)
     inet_pton(AF_INET, dynamic_gateway_ip, &offer_message.giaddr);
 
+    // Establecer el tipo de mensaje DHCP a DHCPOFFER (opción 53)
     offer_message.options[0] = 53;
     offer_message.options[1] = 1;
     offer_message.options[2] = DHCP_OFFER;
+
+    // Agregar máscara de subred (opción 1)
     offer_message.options[3] = 1;
     offer_message.options[4] = 4;
-    inet_pton(AF_INET, "255.255.255.0", &offer_message.options[5]);
+    inet_pton(AF_INET, "255.255.255.0", &offer_message.options[5]);  // Máscara de subred
+
+    // Fin de las opciones (opción 255)
     offer_message.options[9] = 255;
 
+    // Imprimir el mensaje DHCP antes de enviarlo para depuración
     print_dhcp_message(&offer_message);
 
+    // Enviar el mensaje DHCPOFFER al cliente
     int bytes_sent = sendto(socket_fd, &offer_message, sizeof(offer_message), 0, (struct sockaddr *)client_addr, sizeof(*client_addr));
     if (bytes_sent == -1) {
         perror("Error sending DHCPOFFER");
     }
 }
 
-// Function to generate a dynamic gateway IP
+
+// Function to generate a dynamic gateway IP based on the first IP of the range
 void generate_dynamic_gateway_ip(char* gateway_ip, size_t size) {
-    snprintf(gateway_ip, size, "192.168.1.1");
+    // Obtener la IP del gateway dinámicamente desde el pool de IPs
+    strncpy(gateway_ip, get_gateway_ip(), size);
 }
