@@ -14,10 +14,6 @@ void init_db() {
 
     printf("Initializing database...\n");
 
-    if (db_path == NULL) {
-        fprintf(stderr, "Environment variable DB_PATH not set.\n");
-        exit(1);
-    }
 
     // Open the database (will create if it doesn't exist)
     rc = sqlite3_open(db_path, &db);

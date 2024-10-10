@@ -15,7 +15,7 @@ void end_program();
 
 // Structure to pass client information to threads
 typedef struct {
-    int sockfd;
+    int sockfd; 
     struct sockaddr_in client_addr;
     char buffer[BUFFER_SIZE];
     socklen_t client_addr_len;

@@ -58,5 +58,4 @@ void parse_dhcp_options(const uint8_t *options, size_t options_length);
 // Function to print the contents of a DHCP message
 void print_dhcp_message(const dhcp_message_t *msg);
 
-
 #endif
