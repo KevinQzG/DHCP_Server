@@ -55,8 +55,6 @@ void generate_dynamic_gateway_ip(char *gateway_ip, size_t size);
 void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_message_t *request_msg);
 void init_server_addr(struct sockaddr_in *server_addr);
 void set_dhcp_message_options(dhcp_message_t *msg, int type);
-int is_duplicate_request(uint8_t *mac);
-
 // Function to initialize the server address structure
 void init_server_addr(struct sockaddr_in *server_addr)
 {
@@ -202,13 +200,7 @@ void *proccess_client_connection(void *arg)
     // Print the DHCP message with detailed formatting
     print_dhcp_message(&dhcp_msg);
 
-    if (is_duplicate_request(dhcp_msg.chaddr))
-    {
-        printf(YELLOW "Duplicate message detected, ignoring...\n" RESET);
-        free(data);
-        return NULL;
-    }
-
+    
     uint8_t dhcp_message_type = 0;
     for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++)
     {
