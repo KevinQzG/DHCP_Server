@@ -275,13 +275,35 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
     }
 }
 
+// Esta función verifica si la IP está disponible en el pool
+int is_ip_available(uint32_t requested_ip)
+{
+    for (int i = 0; i < pool_size; i++) {
+        char ip_buffer[16];  // Buffer para almacenar la IP convertida
+        int_to_ip(requested_ip, ip_buffer);  // Convertir la IP solicitada a formato de texto
+        if (strcmp(ip_pool[i].ip_address, ip_buffer) == 0 && ip_pool[i].is_assigned == 1) {
+            return 0;  // La IP ya está asignada, no disponible
+        }
+    }
+    return 1;  // Si no se encontró la IP en uso, está disponible
+}
+
+
 void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_message_t *request_msg)
 {
     dhcp_message_t response_msg;
     init_dhcp_message(&response_msg);
 
-    // Verificar si el mensaje es duplicado
-    if (is_duplicate_request(request_msg->chaddr))
+    // Verificar si el cliente está solicitando una IP que ya no está disponible o algún error en la solicitud
+    if (!is_ip_available(request_msg->yiaddr))
+    {
+        // Enviar un DHCP_NAK si la IP solicitada no está disponible
+        printf(RED "Requested IP is not available, sending DHCP_NAK...\n" RESET);
+        set_dhcp_message_type(&response_msg, DHCP_NAK); // Establecer el tipo de mensaje como DHCP_NAK
+
+        // Opcional: Agregar más opciones, si es necesario
+    }
+    else if (is_duplicate_request(request_msg->chaddr))
     {
         printf(YELLOW "Duplicate message detected, ignoring...\n" RESET);
         set_dhcp_message_type(&response_msg, DHCP_DECLINE); 
@@ -304,7 +326,7 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     // Fin de las opciones (opción 255)
     response_msg.options[9] = 255;  // Marcador de fin de opciones
 
-    // Imprimir el mensaje DHCP_ACK antes de enviarlo
+    // Imprimir el mensaje DHCP antes de enviarlo
     print_dhcp_message(&response_msg);
 
     // Enviar el mensaje al cliente
@@ -319,7 +341,12 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     {
         printf(GREEN "DHCP_ACK sent to client.\n" RESET);
     }
+    else if (response_msg.options[2] == DHCP_NAK)
+    {
+        printf(RED "DHCP_NAK sent to client: IP not available.\n" RESET);
+    }
 }
+
 
 
 

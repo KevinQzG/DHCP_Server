@@ -1,5 +1,12 @@
 #ifndef IP_POOL_H
 #define IP_POOL_H
+#include <stdint.h>  // Para usar uint32_t
+extern int pool_size;  // Declaración del tamaño del pool
+
+
+
+int is_ip_available(uint32_t requested_ip);
+
 
 // Estructura para manejar las direcciones IP
 typedef struct {
