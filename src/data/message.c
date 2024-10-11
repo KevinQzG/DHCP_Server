@@ -100,7 +100,13 @@ void parse_dhcp_options(const uint8_t *options, size_t options_length)
             printf("Subnet Mask: %d.%d.%d.%d\n", options[i], options[i + 1], options[i + 2], options[i + 3]);
             break;
         case 51: // Lease Time
-            printf("IP Address Lease Time: %d\n", ntohl(*(uint32_t *)&options[i]));
+            {
+                uint32_t lease_time = ntohl(*(uint32_t *)&options[i]); // Convertir el tiempo de arrendamiento a host byte order
+                printf("IP Address Lease Time: %d seconds (%d hours, %d minutes)\n", 
+                        lease_time, 
+                        lease_time / 3600, 
+                        (lease_time % 3600) / 60);
+            }
             break;
         case 53: // DHCP Message Type
             printf("DHCP Message Type: %d\n", options[i]);
@@ -117,6 +123,7 @@ void parse_dhcp_options(const uint8_t *options, size_t options_length)
         i += length; // Skip to the next option
     }
 }
+
 
 // Function to serialize a dhcp_message_t structure into a raw byte buffer
 int build_dhcp_message(const dhcp_message_t *msg, uint8_t *buffer, size_t buffer_size)
