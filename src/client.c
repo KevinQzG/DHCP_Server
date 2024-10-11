@@ -26,27 +26,33 @@
 // Define the socket variable in a global scope so that it can be accessed by the signal handler
 int sockfd;
 dhcp_message_t assigned_values_msg;
+struct sockaddr_in server_addr;
+int is_ip_assigned = 0; // Global flag to track IP assignment
 
 
-void end_program()
-{
-    if (sockfd >= 0)
-    {
+void end_program() {
+    // Release the assigned IP with DHCP_RELEASE
+    if (is_ip_assigned) {
+        send_dhcp_release(sockfd, &server_addr);
+    } else {
+        printf("No IP address assigned. Skipping DHCP_RELEASE.\n");
+    }
+
+    // Close the socket if it is open
+    if (sockfd >= 0) {
         close(sockfd);
     }
+
     printf("Exiting...\n");
     exit(0);
 }
 
-void handle_signal_interrupt(int signal)
-{
+void handle_signal_interrupt(int signal) {
     printf("\nSignal %d received.\n", signal);
     end_program();
 }
 
-int main()
-{
-    struct sockaddr_in server_addr;
+int main() {
     socklen_t addr_len = sizeof(server_addr);
     int recv_len;
 
@@ -59,13 +65,10 @@ int main()
     // Initialize the created socket
     sockfd = socket(AF_INET, SOCK_DGRAM, 0); // AF_INET: IPv4, SOCK_DGRAM: UDP
 
-    if (sockfd < 0)
-    {
+    if (sockfd < 0) {
         printf("Socket creation failed.\n");
         exit(0);
-    }
-    else
-    {
+    } else {
         printf("Socket created successfully.\n");
     }
 
@@ -93,12 +96,9 @@ int main()
 #endif
 
     // Retrieve and set the client's MAC address in the DHCP message
-    if (get_mac_address(msg.chaddr, iface) == 0)
-    {
+    if (get_mac_address(msg.chaddr, iface) == 0) {
         msg.hlen = 6; // Longitud de la dirección MAC
-    }
-    else
-    {
+    } else {
         printf("Failed to set MAC address.\n");
         close(sockfd);
         return -1;
@@ -109,8 +109,7 @@ int main()
 
     // Send DHCP Discover message to the server
     int sent_bytes = sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&server_addr, addr_len);
-    if (sent_bytes < 0)
-    {
+    if (sent_bytes < 0) {
         printf("Failed to send message to server.\n");
         close(sockfd);
         return -1;
@@ -122,42 +121,31 @@ int main()
     memset(buffer, 0, sizeof(buffer));
     recv_len = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&server_addr, &addr_len);
 
-    if (recv_len > 0)
-    {
+    if (recv_len > 0) {
         dhcp_message_t received_msg;
-        if (parse_dhcp_message(buffer, &received_msg) == 0)
-        {
+        if (parse_dhcp_message(buffer, &received_msg) == 0) {
             // Verificar que el tipo de mensaje es DHCP_OFFER
-            if (received_msg.options[2] == DHCP_OFFER)
-            {
+            if (received_msg.options[2] == DHCP_OFFER) {
                 struct in_addr offered_ip;
                 offered_ip.s_addr = ntohl(received_msg.yiaddr); // Conversión correcta de red a host
                 printf("DHCP_OFFER recibido. IP ofrecida: %s\n", inet_ntoa(offered_ip));
 
                 // Procesar el DHCP_OFFER y enviar el DHCP_REQUEST
                 handle_dhcp_offer(sockfd, &server_addr, &received_msg);
-            }
-            else
-            {
+            } else {
                 printf("Tipo de mensaje no esperado: %d\n", received_msg.options[2]);
             }
-        }
-        else
-        {
+        } else {
             printf("Fallo al parsear el mensaje recibido.\n");
         }
     }
 
-    // Release the assigned IP with DHCP_RELEASE
-    send_dhcp_release(sockfd, &server_addr);
-
-    // Llamar a la función para cerrar el socket y salir del programa
+    // Call the function to close the socket and end the program
     end_program();
     return 0;
 }
 
-void handle_dhcp_offer(int sockfd, struct sockaddr_in *server_addr, dhcp_message_t *offer_msg)
-{
+void handle_dhcp_offer(int sockfd, struct sockaddr_in *server_addr, dhcp_message_t *offer_msg) {
     // Crear mensaje DHCP_REQUEST
     dhcp_message_t request_msg;
     init_dhcp_message(&request_msg);
@@ -175,60 +163,45 @@ void handle_dhcp_offer(int sockfd, struct sockaddr_in *server_addr, dhcp_message
     build_dhcp_message(&request_msg, buffer, sizeof(buffer));
 
     printf("Enviando DHCP_REQUEST al servidor...\n");
-    if (sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0)
-    {
+    if (sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0) {
         perror("Error al enviar DHCP_REQUEST");
-    }
-    else
-    {
+    } else {
         printf("Mensaje DHCP_REQUEST enviado al servidor.\n");
     }
 
     // Esperar el DHCP_ACK del servidor
-    if (recv_dhcp_ack(sockfd, server_addr) == 0)
-    {
+    if (recv_dhcp_ack(sockfd, server_addr) == 0) {
         printf("Proceso DHCP completado con éxito.\n");
-    }
-    else
-    {
+    } else {
         printf("Error en el proceso DHCP al esperar DHCP_ACK.\n");
     }
 }
 
-int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr)
-{
+int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr) {
     uint8_t buffer[BUFFER_SIZE];
     socklen_t addr_len = sizeof(*server_addr);
     int recv_len = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)server_addr, &addr_len);
 
-    if (recv_len > 0)
-    {
+    if (recv_len > 0) {
         dhcp_message_t received_msg;
-        if (parse_dhcp_message(buffer, &received_msg) == 0)
-        {
+        if (parse_dhcp_message(buffer, &received_msg) == 0) {
             // Verificar que el tipo de mensaje es DHCP_ACK
-            if (received_msg.options[2] == DHCP_ACK)
-            {
+            if (received_msg.options[2] == DHCP_ACK) {
                 struct in_addr assigned_ip;
                 assigned_ip.s_addr = ntohl(received_msg.yiaddr); // Conversión de red a host
                 printf(GREEN "DHCP_ACK received. Assigned IP: %s\n" RESET, inet_ntoa(assigned_ip));
                 assigned_values_msg = received_msg;
                 // Assign the assigned IP to the client address in the message
                 assigned_values_msg.ciaddr = received_msg.yiaddr;
-                return 0; // Éxito
-            }
-            else
-            {
+                is_ip_assigned = 1; // Set the flag to indicate IP assignment
+                return 0;           // Éxito
+            } else {
                 printf(RED "Unexpected message type: %d\n" RESET, received_msg.options[2]);
             }
-        }
-        else
-        {
+        } else {
             printf(RED "Failed to parse DHCP_ACK message.\n" RESET);
         }
-    }
-    else
-    {
+    } else {
         printf(RED "Error receiving DHCP_ACK.\n" RESET);
     }
     return -1; // Error
@@ -237,18 +210,17 @@ int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr)
 void send_dhcp_release(int sockfd, struct sockaddr_in *server_addr) {
     // Reuse the global variable 'assigned_values_msg'
     // The ciaddr field should already contain the client's assigned IP address
-    
+
     // Update the DHCP options to indicate a DHCP_RELEASE message type
-    assigned_values_msg.options[0] = 53;  // Option 53: DHCP message type
-    assigned_values_msg.options[1] = 1;  // Length of the option
-    assigned_values_msg.options[2] = DHCP_RELEASE;  // Set DHCP message type to DHCP_RELEASE
+    assigned_values_msg.options[0] = 53;           // Option 53: DHCP message type
+    assigned_values_msg.options[1] = 1;            // Length of the option
+    assigned_values_msg.options[2] = DHCP_RELEASE; // Set DHCP message type to DHCP_RELEASE
 
     // Send the DHCP Release message
-    int msg_len = sizeof(dhcp_message_t);  // Use the actual message size
+    int msg_len = sizeof(dhcp_message_t); // Use the actual message size
     if (sendto(sockfd, &assigned_values_msg, msg_len, 0, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0) {
         perror("Failed to send DHCP_RELEASE message");
     } else {
         printf("DHCP_RELEASE message sent.\n");
     }
 }
-
