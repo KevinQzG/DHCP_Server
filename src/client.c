@@ -184,11 +184,6 @@ int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr)
                 printf(RED BOLD "DHCP_DECLINE received: No IP addresses available.\n" RESET);
                 return -1; // Error: no IPs disponibles
             }
-
-            else
-            {
-                printf(YELLOW "Unexpected message type: %d\n" RESET, received_msg.options[2]);
-            }
         }
         else
         {
@@ -294,10 +289,6 @@ int main()
 
                 // Process the DHCP_OFFER message from the server and send a DHCP_REQUEST
                 handle_dhcp_offer(sockfd, &server_addr, &received_msg);
-            }
-            else
-            {
-                printf(YELLOW "Unexpected message type: %d\n" RESET, received_msg.options[2]);
             }
         }
         else
