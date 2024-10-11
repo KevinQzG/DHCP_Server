@@ -13,4 +13,10 @@ void handle_signal_interrupt(int signal);
 // Function to end the program
 void end_program();
 
+// Function to handle the DHCP Offer message
+void handle_dhcp_offer(int sockfd, struct sockaddr_in *server_addr, dhcp_message_t *offer_msg);
+
+// Function to receive a DHCP ACK message from the server
+int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr);
+
 #endif
