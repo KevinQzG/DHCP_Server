@@ -11,7 +11,7 @@
 #define MAX_CLIENTS 100 // Define the maximum number of clients
 
 // Function Declarations
-void *proccess_client_connection(void *arg);
+void *process_client_connection(void *arg);
 void *check_and_release(void *arg);
 void handle_signal_interrupt(int signal);
 void end_program();
@@ -24,17 +24,18 @@ void handle_dhcp_release(int sockfd, dhcp_message_t *release_msg);
 
 // Structure to pass client information to threads
 typedef struct {
-    int sockfd; 
+    int sockfd;
     struct sockaddr_in client_addr;
     char buffer[BUFFER_SIZE];
     socklen_t client_addr_len;
 } client_data_t;
 
-// Structure to keep track of processed clients to avoid duplicates
+// Structure to track processed clients to avoid duplicates
 typedef struct client_record
 {
     uint8_t mac[6];
-    time_t timestamp; // Timestamp for controlling duplicates in a short time
+    uint32_t ip;      // Add to store the assigned IP
+    time_t timestamp; // Timestamp to track duplicates within a short time
 } client_record_t;
 
 #endif

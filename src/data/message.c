@@ -1,10 +1,10 @@
 #include "./message.h"
 
-#include <stddef.h>    // For offsetof
-#include <string.h>    // For memset, memcpy
-#include <stdio.h>     // For debugging purposes
-#include <time.h> // For time()
-#include <stdlib.h>  // For srand and rand
+#include <stddef.h> // For offsetof
+#include <string.h> // For memset, memcpy
+#include <stdio.h>  // For debugging purposes
+#include <time.h>   // For time()
+#include <stdlib.h> // For srand and rand
 
 #include <arpa/inet.h> // For htonl, ntohl, htons, ntohs
 
@@ -18,6 +18,8 @@
 #define MAGENTA "\033[35m"
 #define RED "\033[31m"
 
+char global_dns_ip[16]; // Definición de la variable global DNS
+
 // Function to initialize a DHCP message structure with default values
 void init_dhcp_message(dhcp_message_t *msg)
 {
@@ -29,11 +31,11 @@ void init_dhcp_message(dhcp_message_t *msg)
     msg->hops = 0;  // Hops (usually 0 for clients)
 
     // Seed the random number generator with the current time (only done once)
-    srand((unsigned int)time(NULL)); 
+    srand((unsigned int)time(NULL));
 
     // Use a random transaction ID
-    msg->xid = rand(); 
-    msg->secs = 0;   // No seconds elapsed
+    msg->xid = rand();
+    msg->secs = 0;              // No seconds elapsed
     msg->flags = htons(0x8000); // Broadcast flag set
 }
 
@@ -102,20 +104,24 @@ void parse_dhcp_options(const uint8_t *options, size_t options_length)
         case 1: // Subnet Mask
             printf("Subnet Mask: %d.%d.%d.%d\n", options[i], options[i + 1], options[i + 2], options[i + 3]);
             break;
+
         case 51: // Lease Time
-            {
-                uint32_t lease_time = ntohl(*(uint32_t *)&options[i]); // Convertir el tiempo de arrendamiento a host byte order
-                printf("IP Address Lease Time: %d seconds (%d hours, %d minutes)\n", 
-                        lease_time, 
-                        lease_time / 3600, 
-                        (lease_time % 3600) / 60);
-            }
-            break;
+        {
+            uint32_t lease_time = ntohl(*(uint32_t *)&options[i]); // Convertir el tiempo de arrendamiento a host byte order
+            printf("IP Address Lease Time: %d seconds (%d hours, %d minutes)\n",
+                   lease_time,
+                   lease_time / 3600,
+                   (lease_time % 3600) / 60);
+        }
+        break;
         case 53: // DHCP Message Type
             printf("DHCP Message Type: %d\n", options[i]);
             break;
         case 54: // DHCP Server Identifier
             printf("DHCP Server Identifier: %d.%d.%d.%d\n", options[i], options[i + 1], options[i + 2], options[i + 3]);
+            break;
+        case 6: // DNS Server
+            printf("DNS Server: %d.%d.%d.%d\n", options[i], options[i + 1], options[i + 2], options[i + 3]);
             break;
         // Add more case statements for other options as needed
         default:
@@ -126,7 +132,6 @@ void parse_dhcp_options(const uint8_t *options, size_t options_length)
         i += length; // Skip to the next option
     }
 }
-
 
 // Function to serialize a dhcp_message_t structure into a raw byte buffer
 int build_dhcp_message(const dhcp_message_t *msg, uint8_t *buffer, size_t buffer_size)
@@ -198,6 +203,14 @@ void print_dhcp_message(const dhcp_message_t *msg)
     gateway_ip.s_addr = msg->giaddr;
     printf(BOLD CYAN "Gateway IP Address      " RESET ": " GREEN "%s\n" RESET, inet_ntoa(gateway_ip));
 
+    // Imprimir DNS Server IP Address solo si es un OFFER o ACK
+    if (msg->options[2] == DHCP_OFFER || msg->options[2] == DHCP_ACK) {
+        // Imprimir DNS Server IP Address
+        printf(BOLD CYAN "DNS Server IP Address   " RESET ": " GREEN "%s\n" RESET, global_dns_ip);
+    } else {
+        printf(BOLD CYAN "DNS Server IP Address   " RESET ": " RED "Not assigned\n" RESET);
+    }
+
     // Imprimir Client MAC Address
     printf(BOLD CYAN "Client MAC Address      " RESET ": ");
     for (int i = 0; i < msg->hlen; i++)
@@ -223,7 +236,7 @@ void print_dhcp_message(const dhcp_message_t *msg)
         uint8_t length = options[i++];
         if (option == 1 && length == 4)
         { // Opción 1 es la Subnet Mask
-            printf(BOLD CYAN "Subnet Mask            " RESET ": " GREEN "%d.%d.%d.%d\n" RESET,
+            printf(BOLD CYAN "Subnet Mask             " RESET ": " GREEN "%d.%d.%d.%d\n" RESET,
                    options[i], options[i + 1], options[i + 2], options[i + 3]);
             subnet_mask_found = 1;
         }
@@ -233,11 +246,11 @@ void print_dhcp_message(const dhcp_message_t *msg)
     // Si no se encuentra la submáscara de red, imprimir un valor por defecto o un mensaje
     if (!subnet_mask_found)
     {
-        printf(BOLD CYAN "Subnet Mask            " RESET ": " RED "Not specified\n" RESET);
+        printf(BOLD CYAN "Subnet Mask             " RESET ": " RED "Not specified\n" RESET);
     }
 
-    printf(BOLD BLUE "------------------------------------------------------\n" RESET);
-    printf(BOLD YELLOW "DHCP Options:\n" RESET);
+    printf(BOLD YELLOW "\n==================== DHCP TYPE ====================\n" RESET);
+    printf("\n");
 
     // Imprimir el resto de las opciones, excluyendo la submáscara de red (opción 1)
     i = 0;
@@ -248,33 +261,35 @@ void print_dhcp_message(const dhcp_message_t *msg)
             break; // Fin de las opciones
         uint8_t length = options[i++];
 
-        if (option == 1)
-        { // Subnet Mask ya fue impresa arriba, así que la saltamos
-            i += length;
-            continue;
-        }
-
         switch (option)
         {
+        case 1: // Subnet Mask ya fue impresa arriba, así que la saltamos
+            i += length;
+            continue;
+
         case 51: // Lease Time
             printf(YELLOW "IP Address Lease Time" RESET ": " GREEN "%d\n" RESET, ntohl(*(uint32_t *)&options[i]));
             break;
+
         case 53: // DHCP Message Type
-            printf(YELLOW "DHCP Message Type    " RESET ": " GREEN "%d (%s)\n" RESET, options[i], get_dhcp_message_type_name(options[i]));
+            printf(YELLOW "DHCP Message Type    " RESET ": " RED "%d (%s)\n" RESET, options[i], get_dhcp_message_type_name(options[i]));
             break;
 
         case 54: // DHCP Server Identifier
-            printf(YELLOW "DHCP Server Identifier" RESET ": " GREEN "%d.%d.%d.%d\n" RESET,
+            printf(YELLOW "DHCP Server Identifier" RESET ": " RED "%d.%d.%d.%d\n" RESET,
                    options[i], options[i + 1], options[i + 2], options[i + 3]);
             break;
-        // Add more case statements for other options as needed
+
+        case 6: // DNS Server
+            // Este print no se realizará, ya que queremos que el DNS se imprima solo en el encabezado
+            break;
+
         default:
-            printf(RED "Unhandled Option     " RESET ": %d\n", option);
             break;
         }
 
         i += length; // Avanzar al siguiente
     }
 
-    printf(BOLD BLUE "\n======================================================\n" RESET);
+    printf(BOLD YELLOW "\n======================================================\n" RESET);
 }
