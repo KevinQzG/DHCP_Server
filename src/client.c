@@ -305,7 +305,9 @@ int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr)
             // Verificar que el tipo de mensaje es DHCP_ACK
             if (received_msg.options[2] == DHCP_ACK)
             {
-                printf(GREEN "DHCP_ACK received. Assigned IP: %s\n" RESET, inet_ntoa(*(struct in_addr *)&received_msg.yiaddr));
+                struct in_addr assigned_ip;
+                assigned_ip.s_addr = ntohl(received_msg.yiaddr); // Conversión de red a host
+                printf(GREEN "DHCP_ACK received. Assigned IP: %s\n" RESET, inet_ntoa(assigned_ip));
                 return 0; // Éxito
             }
             else
