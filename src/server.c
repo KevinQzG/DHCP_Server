@@ -31,6 +31,8 @@ void end_program();
 void handle_signal_interrupt(int signal);
 void* proccess_client_connection(void *arg);
 void generate_dynamic_gateway_ip(char* gateway_ip, size_t size);
+void send_dhcpack(int socket_fd, struct sockaddr_in* client_addr, dhcp_message_t* request_message);
+
 
 int main(int argc, char *argv[]) {
     srand(time(NULL));
@@ -150,6 +152,11 @@ void *proccess_client_connection(void *arg) {
         send_dhcpoffer(connection_sockfd, &client_addr, &dhcp_msg);
     }
 
+    // Handle DHCP_REQUEST message
+    if (dhcp_message_type == DHCP_REQUEST) {
+        send_dhcpack(connection_sockfd, &client_addr, &dhcp_msg);
+    }
+
     const char *response = "DHCP server response";
     sendto(connection_sockfd, response, strlen(response), 0, (SOCKET_ADDRESS *)&client_addr, client_addr_len);
 
@@ -229,6 +236,61 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in* client_addr, dhcp_message
     }
 }
 
+// Function to send DHCP ACK
+// Function to send DHCP ACK
+void send_dhcpack(int socket_fd, struct sockaddr_in* client_addr, dhcp_message_t* request_message) {
+    dhcp_message_t ack_message;
+    init_dhcp_message(&ack_message);
+
+    // Copiar la dirección MAC del mensaje DHCP REQUEST
+    if (request_message->hlen == 6) {
+        memcpy(ack_message.chaddr, request_message->chaddr, 6);
+    } else {
+        printf("Error: Invalid MAC address length.\n");
+        return;
+    }
+
+    // Asignar la misma IP que se ofreció en el mensaje DHCP OFFER
+    char assigned_ip[INET_ADDRSTRLEN];
+    // Obtener la IP asignada desde tu base de datos o estructura donde se almacenó en DHCPOFFER
+    // Esto depende de tu implementación
+    // get_assigned_ip(request_message->chaddr, assigned_ip);
+
+    inet_pton(AF_INET, assigned_ip, &ack_message.yiaddr);
+
+    // Asignar la IP del servidor al campo 'siaddr'
+    inet_pton(AF_INET, server_ip, &ack_message.siaddr);
+
+    // Dejar la IP del cliente 'ciaddr' como 0.0.0.0
+    inet_pton(AF_INET, "0.0.0.0", &ack_message.ciaddr);
+
+    // Generar la IP del gateway dinámicamente
+    char dynamic_gateway_ip[16];
+    generate_dynamic_gateway_ip(dynamic_gateway_ip, sizeof(dynamic_gateway_ip));
+    inet_pton(AF_INET, dynamic_gateway_ip, &ack_message.giaddr);
+
+    // Establecer el tipo de mensaje DHCP a DHCPACK (opción 53)
+    ack_message.options[0] = 53;
+    ack_message.options[1] = 1;
+    ack_message.options[2] = DHCP_ACK;
+
+    // Agregar máscara de subred (opción 1)
+    ack_message.options[3] = 1;
+    ack_message.options[4] = 4;
+    inet_pton(AF_INET, "255.255.255.0", &ack_message.options[5]);
+
+    // Fin de las opciones (opción 255)
+    ack_message.options[9] = 255;
+
+    // Imprimir el mensaje DHCP antes de enviarlo para depuración
+    print_dhcp_message(&ack_message);
+
+    // Enviar el mensaje DHCPACK al cliente
+    int bytes_sent = sendto(socket_fd, &ack_message, sizeof(ack_message), 0, (struct sockaddr *)client_addr, sizeof(*client_addr));
+    if (bytes_sent == -1) {
+        perror("Error sending DHCPACK");
+    }
+}
 
 // Function to generate a dynamic gateway IP based on the first IP of the range
 void generate_dynamic_gateway_ip(char* gateway_ip, size_t size) {
