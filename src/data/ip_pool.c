@@ -80,24 +80,25 @@ char* get_gateway_ip() {
 }
 
 
-
 char* assign_ip() {
     for (int i = 0; i < pool_size; i++) {
-        // Verificar que la IP no sea la misma que la del gateway
-        if (ip_pool[i].is_assigned == 0 && strcmp(ip_pool[i].ip_address, get_gateway_ip()) != 0) {
-            ip_pool[i].is_assigned = 1;     // Marcar la IP como asignada
-            return ip_pool[i].ip_address;   // Retornar la IP asignada
+        if (ip_pool[i].is_assigned == 0) {
+            ip_pool[i].is_assigned = 1;     // Marks the IP as assigned
+            return ip_pool[i].ip_address;   // Return the IP address
+
         }
     }
-    return NULL;  // Si no hay IPs disponibles
+    return NULL;  // In case no IP is available
 }
+
 
 void release_ip(const char* ip) {
     for (int i = 0; i < pool_size; i++) {
         if (strcmp(ip_pool[i].ip_address, ip) == 0) {
-            ip_pool[i].is_assigned = 0;  // Marcar la IP como no asignada
-            break;
+            ip_pool[i].is_assigned = 0;  // Marks the IP as available
+            return;
         }
     }
+    printf("IP not found in pool: %s\n", ip);
 }
 
