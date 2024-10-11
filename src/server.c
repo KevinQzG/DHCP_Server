@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>  // Para generar números aleatorios con srand() y rand()
+#include <time.h> // To generate random numbers using srand() and rand()
 
 // Includes for socket creation
 #include <sys/socket.h> // For socket creation
@@ -21,6 +21,7 @@
 #include "./data/message.h"
 #include "data/ip_pool.h"
 
+// Define ANSI color codes
 #define RESET "\033[0m"
 #define BOLD "\033[1m"
 #define BLUE "\033[34m"
@@ -36,24 +37,29 @@ int sockfd;
 // Define the maximum number of clients
 #define MAX_CLIENTS 100
 
-// Structure to keep track of processed clients to avoid duplicates
+// Structure to track processed clients to avoid duplicates
 typedef struct client_record
 {
     uint8_t mac[6];
-    time_t timestamp; // Timestamp for controlling duplicates in a short time
+    time_t timestamp; // Timestamp to track duplicates within a short time
 } client_record_t;
 
 client_record_t clients[MAX_CLIENTS];
+
+// Global variables for storing the subnet mask and gateway IP
+char global_subnet_mask[16]; // Global variable for the subnet mask
+char global_gateway_ip[16];  // Global variable for the gateway IP
 
 // Function declarations
 void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message_t *discover_message);
 void end_program();
 void handle_signal_interrupt(int signal);
-void *proccess_client_connection(void *arg);
+void *process_client_connection(void *arg);
 void generate_dynamic_gateway_ip(char *gateway_ip, size_t size);
 void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_message_t *request_msg);
 void init_server_addr(struct sockaddr_in *server_addr);
 void set_dhcp_message_options(dhcp_message_t *msg, int type);
+
 // Function to initialize the server address structure
 void init_server_addr(struct sockaddr_in *server_addr)
 {
@@ -61,9 +67,13 @@ void init_server_addr(struct sockaddr_in *server_addr)
     server_addr->sin_family = AF_INET;                   // IPv4
     server_addr->sin_addr.s_addr = inet_addr(server_ip); // Server IP
     server_addr->sin_port = htons(port);                 // Convert port to network byte order
+
+    // Load the subnet mask from the environment variable
+    strncpy(global_subnet_mask, getenv("SUBNET"), sizeof(global_subnet_mask)); // Load subnet from .env
+    printf(GREEN "Subnet loaded: %s\n" RESET, global_subnet_mask);
 }
 
-// Function to set the DHCP message options
+// Function to set DHCP message options
 void set_dhcp_message_options(dhcp_message_t *msg, int type)
 {
     msg->options[0] = 53;   // DHCP Message Type
@@ -108,8 +118,8 @@ int is_duplicate_request(uint8_t *mac)
 
 int main(int argc, char *argv[])
 {
-    srand(time(NULL));
 
+    srand(time(NULL));
     struct sockaddr_in server_addr, client_addr;
     char buffer[BUFFER_SIZE];
     socklen_t client_addr_len = sizeof(client_addr);
@@ -162,7 +172,7 @@ int main(int argc, char *argv[])
         client_data->client_addr_len = client_addr_len;
 
         pthread_t thread_id;
-        if (pthread_create(&thread_id, NULL, proccess_client_connection, (void *)client_data) != 0)
+        if (pthread_create(&thread_id, NULL, process_client_connection, (void *)client_data) != 0)
         {
             printf(RED "Failed to create thread.\n" RESET);
             free(client_data);
@@ -176,7 +186,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void *proccess_client_connection(void *arg)
+void *process_client_connection(void *arg)
 {
     client_data_t *data = (client_data_t *)arg;
     char *buffer = data->buffer;
@@ -198,16 +208,15 @@ void *proccess_client_connection(void *arg)
     // Print the DHCP message with detailed formatting
     print_dhcp_message(&dhcp_msg);
 
-    
     uint8_t dhcp_message_type = 0;
-for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++)
-{
-    if (dhcp_msg.options[i] == 53)
+    for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++)
     {
-        dhcp_message_type = dhcp_msg.options[i + 2]; // Corregido: obtener el valor real del tipo de mensaje
-        break;
+        if (dhcp_msg.options[i] == 53)
+        {
+            dhcp_message_type = dhcp_msg.options[i + 2]; // Corrected: get the actual message type value
+            break;
+        }
     }
-}
 
     switch (dhcp_message_type)
     {
@@ -230,40 +239,37 @@ for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++)
     return NULL;
 }
 
-// Variables globales para almacenar la máscara de subred y el gateway IP
-char global_subnet_mask[16];
-char global_gateway_ip[16];
-
+// Function to send DHCPOFFER
 void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message_t *discover_message)
 {
     dhcp_message_t offer_message;
     init_dhcp_message(&offer_message);
 
-    // Copia la dirección MAC del cliente
+    // Copy the client's MAC address
     memcpy(offer_message.chaddr, discover_message->chaddr, 6);
 
-    // Asigna una IP desde el pool
+    // Assign an IP from the pool
     char *assigned_ip = assign_ip();
     inet_pton(AF_INET, assigned_ip, &offer_message.yiaddr);
 
-    // Configura la dirección IP del servidor
+    // Set server IP address
     inet_pton(AF_INET, server_ip, &offer_message.siaddr);
 
-    // Establecer el tipo de mensaje DHCP a DHCPOFFER (opción 53)
+    // Set DHCP message type to DHCPOFFER (option 53)
     set_dhcp_message_type(&offer_message, DHCP_OFFER);
 
-    // Agregar máscara de subred (opción 1)
-    offer_message.options[3] = 1;                                      // Opción 1: Subnet Mask
-    offer_message.options[4] = 4;                                      // Longitud de la opción Subnet Mask (4 bytes)
-    inet_pton(AF_INET, global_subnet_mask, &offer_message.options[5]); // Máscara de subred
+    // Add subnet mask (option 1)
+    offer_message.options[3] = 1;                                      // Option 1: Subnet Mask
+    offer_message.options[4] = 4;                                      // Length of Subnet Mask option (4 bytes)
+    inet_pton(AF_INET, global_subnet_mask, &offer_message.options[5]); // Subnet Mask
 
-    // Fin de las opciones (opción 255)
+    // End of options (option 255)
     offer_message.options[9] = 255;
 
-    // Imprimir el mensaje DHCP antes de enviarlo
+    // Print the DHCP message before sending
     print_dhcp_message(&offer_message);
 
-    // Enviar el mensaje DHCPOFFER al cliente
+    // Send the DHCPOFFER message to the client
     int bytes_sent = sendto(socket_fd, &offer_message, sizeof(offer_message), 0, (struct sockaddr *)client_addr, sizeof(*client_addr));
     if (bytes_sent == -1)
     {
@@ -275,61 +281,63 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
     }
 }
 
-// Esta función verifica si la IP está disponible en el pool
+// Function to check if a requested IP is available
 int is_ip_available(uint32_t requested_ip)
 {
-    for (int i = 0; i < pool_size; i++) {
-        char ip_buffer[16];  // Buffer para almacenar la IP convertida
-        int_to_ip(requested_ip, ip_buffer);  // Convertir la IP solicitada a formato de texto
-        if (strcmp(ip_pool[i].ip_address, ip_buffer) == 0 && ip_pool[i].is_assigned == 1) {
-            return 0;  // La IP ya está asignada, no disponible
+    for (int i = 0; i < pool_size; i++)
+    {
+        char ip_buffer[16];
+        int_to_ip(requested_ip, ip_buffer);
+        if (strcmp(ip_pool[i].ip_address, ip_buffer) == 0 && ip_pool[i].is_assigned == 1)
+        {
+            return 0; // IP is already assigned, not available
         }
     }
-    return 1;  // Si no se encontró la IP en uso, está disponible
+    return 1;
 }
 
-
+// Function to handle DHCP request message
 void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_message_t *request_msg)
 {
     dhcp_message_t response_msg;
     init_dhcp_message(&response_msg);
 
-    // Verificar si el cliente está solicitando una IP que ya no está disponible o algún error en la solicitud
+    // Check if the client is requesting an IP that is no longer available or if there is an error in the request
     if (!is_ip_available(request_msg->yiaddr))
     {
-        // Enviar un DHCP_NAK si la IP solicitada no está disponible
+        // Send a DHCP_NAK if the requested IP is unavailable
         printf(RED "Requested IP is not available, sending DHCP_NAK...\n" RESET);
-        set_dhcp_message_type(&response_msg, DHCP_NAK); // Establecer el tipo de mensaje como DHCP_NAK
+        set_dhcp_message_type(&response_msg, DHCP_NAK); // Set message type to DHCP_NAK
 
-        // Opcional: Agregar más opciones, si es necesario
+        // Optionally, add more options if necessary
     }
     else if (is_duplicate_request(request_msg->chaddr))
     {
         printf(YELLOW "Duplicate message detected, ignoring...\n" RESET);
-        set_dhcp_message_type(&response_msg, DHCP_DECLINE); 
+        set_dhcp_message_type(&response_msg, DHCP_DECLINE);
     }
     else
     {
         printf(GREEN "Sending DHCP_ACK...\n" RESET);
-        set_dhcp_message_type(&response_msg, DHCP_ACK); // Establecer el tipo de mensaje como DHCP_ACK
-        response_msg.yiaddr = request_msg->yiaddr;      // Asignar la IP que el cliente solicitó
+        set_dhcp_message_type(&response_msg, DHCP_ACK); // Set message type to DHCP_ACK
+        response_msg.yiaddr = request_msg->yiaddr;      // Assign the IP requested by the client
     }
 
-    // Usar el mismo gateway que en el DHCP_OFFER
+    // Use the same gateway as in the DHCPOFFER
     inet_pton(AF_INET, global_gateway_ip, &response_msg.giaddr);
 
-    // Agregar la misma máscara de subred que en el DHCP_OFFER
-    response_msg.options[3] = 1; // Opción 1: Subnet Mask
-    response_msg.options[4] = 4; // Longitud de la opción Subnet Mask (4 bytes)
+    // Add the same subnet mask as in the DHCPOFFER
+    response_msg.options[3] = 1; // Option 1: Subnet Mask
+    response_msg.options[4] = 4; // Length of Subnet Mask option (4 bytes)
     inet_pton(AF_INET, global_subnet_mask, &response_msg.options[5]);
 
-    // Fin de las opciones (opción 255)
-    response_msg.options[9] = 255;  // Marcador de fin de opciones
+    // End of options (option 255)
+    response_msg.options[9] = 255;
 
-    // Imprimir el mensaje DHCP antes de enviarlo
+    // Print the DHCP message before sending
     print_dhcp_message(&response_msg);
 
-    // Enviar el mensaje al cliente
+    // Send the message to the client
     uint8_t buffer[sizeof(dhcp_message_t)];
     build_dhcp_message(&response_msg, buffer, sizeof(buffer));
 
@@ -347,9 +355,7 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     }
 }
 
-
-
-
+// Signal handling function to clean up when the program is interrupted
 void handle_signal_interrupt(int signal)
 {
     printf("\nSignal %d received.\n", signal);
@@ -359,10 +365,11 @@ void handle_signal_interrupt(int signal)
 // Function to generate a dynamic gateway IP based on the first IP of the range
 void generate_dynamic_gateway_ip(char *gateway_ip, size_t size)
 {
-    // Obtener la IP del gateway dinámicamente desde el pool de IPs
+    // Get the dynamic gateway IP from the IP pool
     strncpy(gateway_ip, get_gateway_ip(), size);
 }
 
+// Function to clean up and terminate the program
 void end_program()
 {
     if (sockfd >= 0)

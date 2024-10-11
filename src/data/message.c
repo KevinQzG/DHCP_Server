@@ -1,10 +1,10 @@
 #include "./message.h"
 
-#include <stddef.h>    // For offsetof
-#include <string.h>    // For memset, memcpy
-#include <stdio.h>     // For debugging purposes
-#include <time.h> // For time()
-#include <stdlib.h>  // For srand and rand
+#include <stddef.h> // For offsetof
+#include <string.h> // For memset, memcpy
+#include <stdio.h>  // For debugging purposes
+#include <time.h>   // For time()
+#include <stdlib.h> // For srand and rand
 
 #include <arpa/inet.h> // For htonl, ntohl, htons, ntohs
 
@@ -29,11 +29,11 @@ void init_dhcp_message(dhcp_message_t *msg)
     msg->hops = 0;  // Hops (usually 0 for clients)
 
     // Seed the random number generator with the current time (only done once)
-    srand((unsigned int)time(NULL)); 
+    srand((unsigned int)time(NULL));
 
     // Use a random transaction ID
-    msg->xid = rand(); 
-    msg->secs = 0;   // No seconds elapsed
+    msg->xid = rand();
+    msg->secs = 0;              // No seconds elapsed
     msg->flags = htons(0x8000); // Broadcast flag set
 }
 
@@ -103,14 +103,14 @@ void parse_dhcp_options(const uint8_t *options, size_t options_length)
             printf("Subnet Mask: %d.%d.%d.%d\n", options[i], options[i + 1], options[i + 2], options[i + 3]);
             break;
         case 51: // Lease Time
-            {
-                uint32_t lease_time = ntohl(*(uint32_t *)&options[i]); // Convertir el tiempo de arrendamiento a host byte order
-                printf("IP Address Lease Time: %d seconds (%d hours, %d minutes)\n", 
-                        lease_time, 
-                        lease_time / 3600, 
-                        (lease_time % 3600) / 60);
-            }
-            break;
+        {
+            uint32_t lease_time = ntohl(*(uint32_t *)&options[i]); // Convertir el tiempo de arrendamiento a host byte order
+            printf("IP Address Lease Time: %d seconds (%d hours, %d minutes)\n",
+                   lease_time,
+                   lease_time / 3600,
+                   (lease_time % 3600) / 60);
+        }
+        break;
         case 53: // DHCP Message Type
             printf("DHCP Message Type: %d\n", options[i]);
             break;
@@ -126,7 +126,6 @@ void parse_dhcp_options(const uint8_t *options, size_t options_length)
         i += length; // Skip to the next option
     }
 }
-
 
 // Function to serialize a dhcp_message_t structure into a raw byte buffer
 int build_dhcp_message(const dhcp_message_t *msg, uint8_t *buffer, size_t buffer_size)
