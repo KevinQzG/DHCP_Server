@@ -25,6 +25,7 @@
 
 // Define the socket variable in a global scope so that it can be accessed by the signal handler
 int sockfd;
+dhcp_message_t assigned_values_msg;
 
 
 void end_program()
@@ -147,6 +148,9 @@ int main()
         }
     }
 
+    // Release the assigned IP with DHCP_RELEASE
+    send_dhcp_release(sockfd, &server_addr);
+
     // Llamar a la función para cerrar el socket y salir del programa
     end_program();
     return 0;
@@ -208,6 +212,9 @@ int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr)
                 struct in_addr assigned_ip;
                 assigned_ip.s_addr = ntohl(received_msg.yiaddr); // Conversión de red a host
                 printf(GREEN "DHCP_ACK received. Assigned IP: %s\n" RESET, inet_ntoa(assigned_ip));
+                assigned_values_msg = received_msg;
+                // Assign the assigned IP to the client address in the message
+                assigned_values_msg.ciaddr = received_msg.yiaddr;
                 return 0; // Éxito
             }
             else
@@ -226,3 +233,22 @@ int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr)
     }
     return -1; // Error
 }
+
+void send_dhcp_release(int sockfd, struct sockaddr_in *server_addr) {
+    // Reuse the global variable 'assigned_values_msg'
+    // The ciaddr field should already contain the client's assigned IP address
+    
+    // Update the DHCP options to indicate a DHCP_RELEASE message type
+    assigned_values_msg.options[0] = 53;  // Option 53: DHCP message type
+    assigned_values_msg.options[1] = 1;  // Length of the option
+    assigned_values_msg.options[2] = DHCP_RELEASE;  // Set DHCP message type to DHCP_RELEASE
+
+    // Send the DHCP Release message
+    int msg_len = sizeof(dhcp_message_t);  // Use the actual message size
+    if (sendto(sockfd, &assigned_values_msg, msg_len, 0, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0) {
+        perror("Failed to send DHCP_RELEASE message");
+    } else {
+        printf("DHCP_RELEASE message sent.\n");
+    }
+}
+

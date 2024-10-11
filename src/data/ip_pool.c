@@ -53,8 +53,12 @@ void init_ip_pool() {
     // Asignar la primera IP del rango como gateway
     strncpy(gateway_ip, start_ip, sizeof(gateway_ip));
 
+    // Change the gateway IP in the pool to assigned
+    strncpy(ip_pool[0].ip_address, gateway_ip, sizeof(ip_pool[0].ip_address));
+    ip_pool[0].is_assigned = 1;
+
     // Convertir las IPs de inicio y fin a enteros
-    unsigned int start = ip_to_int(start_ip);
+    unsigned int start = ip_to_int(start_ip) + 1;
     unsigned int end = ip_to_int(end_ip);
 
     int i = 0;
@@ -86,5 +90,14 @@ char* assign_ip() {
         }
     }
     return NULL;  // Si no hay IPs disponibles
+}
+
+void release_ip(const char* ip) {
+    for (int i = 0; i < pool_size; i++) {
+        if (strcmp(ip_pool[i].ip_address, ip) == 0) {
+            ip_pool[i].is_assigned = 0;  // Marcar la IP como no asignada
+            break;
+        }
+    }
 }
 

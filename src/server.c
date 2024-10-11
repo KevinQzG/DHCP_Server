@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>  // Para generar números aleatorios con srand() y rand()
+#include <time.h> // Para generar números aleatorios con srand() y rand()
 
 // Includes for socket creation
 #include <sys/socket.h> // For socket creation
@@ -33,27 +33,8 @@
 // Global variables
 int sockfd;
 
-// Define the maximum number of clients
-#define MAX_CLIENTS 100
-
-// Structure to keep track of processed clients to avoid duplicates
-typedef struct client_record
-{
-    uint8_t mac[6];
-    time_t timestamp; // Timestamp for controlling duplicates in a short time
-} client_record_t;
-
 client_record_t clients[MAX_CLIENTS];
 
-// Function declarations
-void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message_t *discover_message);
-void end_program();
-void handle_signal_interrupt(int signal);
-void *proccess_client_connection(void *arg);
-void generate_dynamic_gateway_ip(char *gateway_ip, size_t size);
-void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_message_t *request_msg);
-void init_server_addr(struct sockaddr_in *server_addr);
-void set_dhcp_message_options(dhcp_message_t *msg, int type);
 // Function to initialize the server address structure
 void init_server_addr(struct sockaddr_in *server_addr)
 {
@@ -198,16 +179,13 @@ void *proccess_client_connection(void *arg)
     // Print the DHCP message with detailed formatting
     print_dhcp_message(&dhcp_msg);
 
-    
     uint8_t dhcp_message_type = 0;
-for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++)
-{
-    if (dhcp_msg.options[i] == 53)
-    {
-        dhcp_message_type = dhcp_msg.options[i + 2]; // Corregido: obtener el valor real del tipo de mensaje
-        break;
+    for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++){
+        if (dhcp_msg.options[i] == 53){
+            dhcp_message_type = dhcp_msg.options[i + 2]; // Corregido: obtener el valor real del tipo de mensaje
+            break;
+        }
     }
-}
 
     switch (dhcp_message_type)
     {
@@ -219,6 +197,11 @@ for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++)
     case DHCP_REQUEST:
         printf(GREEN "Received DHCP_REQUEST from client.\n" RESET);
         handle_dhcp_request(connection_sockfd, &client_addr, &dhcp_msg);
+        break;
+
+    case DHCP_RELEASE:
+        printf(GREEN "Received DHCP_RELEASE from client.\n" RESET);
+        handle_dhcp_release(connection_sockfd, &dhcp_msg);
         break;
 
     default:
@@ -278,16 +261,17 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
 // Esta función verifica si la IP está disponible en el pool
 int is_ip_available(uint32_t requested_ip)
 {
-    for (int i = 0; i < pool_size; i++) {
-        char ip_buffer[16];  // Buffer para almacenar la IP convertida
-        int_to_ip(requested_ip, ip_buffer);  // Convertir la IP solicitada a formato de texto
-        if (strcmp(ip_pool[i].ip_address, ip_buffer) == 0 && ip_pool[i].is_assigned == 1) {
-            return 0;  // La IP ya está asignada, no disponible
+    for (int i = 0; i < pool_size; i++)
+    {
+        char ip_buffer[16];                 // Buffer para almacenar la IP convertida
+        int_to_ip(requested_ip, ip_buffer); // Convertir la IP solicitada a formato de texto
+        if (strcmp(ip_pool[i].ip_address, ip_buffer) == 0 && ip_pool[i].is_assigned == 1)
+        {
+            return 0; // La IP ya está asignada, no disponible
         }
     }
-    return 1;  // Si no se encontró la IP en uso, está disponible
+    return 1; // Si no se encontró la IP en uso, está disponible
 }
-
 
 void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_message_t *request_msg)
 {
@@ -306,7 +290,7 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     else if (is_duplicate_request(request_msg->chaddr))
     {
         printf(YELLOW "Duplicate message detected, ignoring...\n" RESET);
-        set_dhcp_message_type(&response_msg, DHCP_DECLINE); 
+        set_dhcp_message_type(&response_msg, DHCP_DECLINE);
     }
     else
     {
@@ -324,7 +308,7 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     inet_pton(AF_INET, global_subnet_mask, &response_msg.options[5]);
 
     // Fin de las opciones (opción 255)
-    response_msg.options[9] = 255;  // Marcador de fin de opciones
+    response_msg.options[9] = 255; // Marcador de fin de opciones
 
     // Imprimir el mensaje DHCP antes de enviarlo
     print_dhcp_message(&response_msg);
@@ -347,8 +331,14 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     }
 }
 
+void handle_dhcp_release(int sockfd, dhcp_message_t *release_msg)
+{
+    // Free the IP address
+    release_ip(inet_ntoa(*(struct in_addr *)&release_msg->ciaddr));
 
-
+    // Print the DHCP_RELEASE message
+    printf("IP address %s released.\n", inet_ntoa(*(struct in_addr *)&release_msg->ciaddr));
+}
 
 void handle_signal_interrupt(int signal)
 {

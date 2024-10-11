@@ -20,6 +20,7 @@ extern ip_pool_entry_t* ip_pool;
 // Funciones para manejar el pool de IPs
 void init_ip_pool();  // Inicializa el pool de IPs
 char* assign_ip();    // Asigna una IP del pool disponible
+void release_ip(const char* ip);  // Libera una IP asignada
 char* get_gateway_ip();  // Nueva declaración
 
 // Declaración de funciones para convertir IP a entero y viceversa
