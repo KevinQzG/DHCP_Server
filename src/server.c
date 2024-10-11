@@ -71,6 +71,11 @@ void init_server_addr(struct sockaddr_in *server_addr)
     // Load the subnet mask from the environment variable
     strncpy(global_subnet_mask, getenv("SUBNET"), sizeof(global_subnet_mask)); // Load subnet from .env
     printf(GREEN "Subnet loaded: %s\n" RESET, global_subnet_mask);
+
+     // Generate the gateway IP dynamically
+    generate_dynamic_gateway_ip(global_gateway_ip, sizeof(global_gateway_ip));
+    printf(GREEN "Dynamic Gateway generated: %s\n" RESET, global_gateway_ip);
+ 
 }
 
 // Function to set DHCP message options
@@ -301,6 +306,8 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
 {
     dhcp_message_t response_msg;
     init_dhcp_message(&response_msg);
+    memcpy(response_msg.chaddr, request_msg->chaddr, 6);
+    inet_pton(AF_INET, server_ip, &response_msg.siaddr);
 
     // Check if the client is requesting an IP that is no longer available or if there is an error in the request
     if (!is_ip_available(request_msg->yiaddr))
