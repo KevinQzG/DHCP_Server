@@ -202,24 +202,24 @@ void *proccess_client_connection(void *arg)
 
     
     uint8_t dhcp_message_type = 0;
-    for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++)
+for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++)
+{
+    if (dhcp_msg.options[i] == 53)
     {
-        if (dhcp_msg.options[i] == 53)
-        {
-            dhcp_message_type = dhcp_msg.options[i + 1];
-            break;
-        }
+        dhcp_message_type = dhcp_msg.options[i + 2]; // Corregido: obtener el valor real del tipo de mensaje
+        break;
     }
+}
 
     switch (dhcp_message_type)
     {
     case DHCP_DISCOVER:
-        printf(GREEN "Received DHCP_DISCOVER from client. Sending DHCP_OFFER...\n" RESET);
+        printf(GREEN "Received DHCP_DISCOVER from client.\n" RESET);
         send_dhcpoffer(connection_sockfd, &client_addr, &dhcp_msg);
         break;
 
     case DHCP_REQUEST:
-        printf(GREEN "Received DHCP_REQUEST from client. Sending DHCP_ACK...\n" RESET);
+        printf(GREEN "Received DHCP_REQUEST from client.\n" RESET);
         handle_dhcp_request(connection_sockfd, &client_addr, &dhcp_msg);
         break;
 
@@ -251,22 +251,8 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
     // Configura la dirección IP del servidor
     inet_pton(AF_INET, server_ip, &offer_message.siaddr);
 
-    // Dejar la IP del cliente 'ciaddr' como 0.0.0.0
-    inet_pton(AF_INET, "0.0.0.0", &offer_message.ciaddr);
-
-    // Generar la IP del gateway dinámicamente desde el rango de IPs
-    generate_dynamic_gateway_ip(global_gateway_ip, sizeof(global_gateway_ip));
-
-    // Asignar la IP del gateway al campo 'giaddr' (Gateway IP)
-    inet_pton(AF_INET, global_gateway_ip, &offer_message.giaddr);
-
-    // Asignar máscara de subred
-    strcpy(global_subnet_mask, "255.255.255.0");
-
     // Establecer el tipo de mensaje DHCP a DHCPOFFER (opción 53)
-    offer_message.options[0] = 53;
-    offer_message.options[1] = 1;
-    offer_message.options[2] = DHCP_OFFER;
+    set_dhcp_message_type(&offer_message, DHCP_OFFER);
 
     // Agregar máscara de subred (opción 1)
     offer_message.options[3] = 1;                                      // Opción 1: Subnet Mask
@@ -276,7 +262,7 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
     // Fin de las opciones (opción 255)
     offer_message.options[9] = 255;
 
-    // Imprimir el mensaje DHCP antes de enviarlo para depuración
+    // Imprimir el mensaje DHCP antes de enviarlo
     print_dhcp_message(&offer_message);
 
     // Enviar el mensaje DHCPOFFER al cliente
@@ -291,7 +277,6 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
     }
 }
 
-
 void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_message_t *request_msg)
 {
     dhcp_message_t response_msg;
@@ -301,33 +286,30 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     if (is_duplicate_request(request_msg->chaddr))
     {
         printf(YELLOW "Duplicate message detected, ignoring...\n" RESET);
-        set_dhcp_message_type(&response_msg, DHCP_DECLINE); // Enviar DHCP_DECLINE en caso de mensaje duplicado
+        set_dhcp_message_type(&response_msg, DHCP_DECLINE); 
     }
     else
     {
         printf(GREEN "Sending DHCP_ACK...\n" RESET);
         set_dhcp_message_type(&response_msg, DHCP_ACK); // Establecer el tipo de mensaje como DHCP_ACK
         response_msg.yiaddr = request_msg->yiaddr;      // Asignar la IP que el cliente solicitó
-
-        // Usar el mismo gateway que en el DHCP_OFFER
-        inet_pton(AF_INET, global_gateway_ip, &response_msg.giaddr);
-
-        // Agregar la misma máscara de subred que en el DHCP_OFFER
-        response_msg.options[3] = 1; // Opción 1: Subnet Mask
-        response_msg.options[4] = 4; // Longitud de la opción Subnet Mask (4 bytes)
-        inet_pton(AF_INET, global_subnet_mask, &response_msg.options[5]);
-
-        // Fin de las opciones (opción 255)
-        response_msg.options[9] = 255;
     }
 
-    // Configurar la dirección IP del servidor (siaddr) en el mensaje de respuesta
-    inet_pton(AF_INET, server_ip, &response_msg.siaddr);
+    // Usar el mismo gateway que en el DHCP_OFFER
+    inet_pton(AF_INET, global_gateway_ip, &response_msg.giaddr);
 
-    // Copiar la dirección MAC del cliente en el mensaje de respuesta
-    memcpy(response_msg.chaddr, request_msg->chaddr, sizeof(response_msg.chaddr));
+    // Agregar la misma máscara de subred que en el DHCP_OFFER
+    response_msg.options[3] = 1; // Opción 1: Subnet Mask
+    response_msg.options[4] = 4; // Longitud de la opción Subnet Mask (4 bytes)
+    inet_pton(AF_INET, global_subnet_mask, &response_msg.options[5]);
 
-    // Serializar el mensaje y enviarlo al cliente
+    // Fin de las opciones (opción 255)
+    response_msg.options[9] = 255;  // Marcador de fin de opciones
+
+    // Imprimir el mensaje DHCP_ACK antes de enviarlo
+    print_dhcp_message(&response_msg);
+
+    // Enviar el mensaje al cliente
     uint8_t buffer[sizeof(dhcp_message_t)];
     build_dhcp_message(&response_msg, buffer, sizeof(buffer));
 
@@ -339,11 +321,8 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     {
         printf(GREEN "DHCP_ACK sent to client.\n" RESET);
     }
-    else if (response_msg.options[2] == DHCP_DECLINE)
-    {
-        printf(YELLOW "DHCP_DECLINE sent to client.\n" RESET);
-    }
 }
+
 
 
 void handle_signal_interrupt(int signal)
