@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>  // Para generar números aleatorios con srand() y rand()
 
 // Includes for socket creation
 #include <sys/socket.h> // For socket creation
@@ -17,9 +18,7 @@
 // Personal includes
 #include "./server.h"
 #include "./config/env.h"
-#include "./data/message.h" // Include message.h to use the print functions
-#include "./config/db.h"
-#include <time.h> // For srand() and rand() functions
+#include "./data/message.h"
 #include "data/ip_pool.h"
 
 #define RESET "\033[0m"
@@ -116,7 +115,6 @@ int main(int argc, char *argv[])
     socklen_t client_addr_len = sizeof(client_addr);
 
     load_env_variables();
-    init_db();
 
     signal(SIGINT, handle_signal_interrupt);
     init_ip_pool();
