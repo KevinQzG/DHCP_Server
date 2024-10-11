@@ -32,6 +32,8 @@
 
 // Global variables
 int sockfd;
+char global_subnet_mask[16];
+char global_gateway_ip[16];
 
 client_record_t clients[MAX_CLIENTS];
 
@@ -119,6 +121,13 @@ int main(int argc, char *argv[])
     printf(GREEN "Socket bind successful.\n" RESET);
     printf(YELLOW "UDP server is running on %s:%d...\n" RESET, server_ip, port);
 
+    // Create a thread to check and release expired leases
+    pthread_t lease_thread;
+    if (pthread_create(&lease_thread, NULL, check_and_release, NULL) != 0){
+        printf(RED "Failed to create leases thread.\n" RESET);
+        end_program();
+    }
+
     while (1)
     {
         memset(buffer, 0, BUFFER_SIZE);
@@ -155,6 +164,13 @@ int main(int argc, char *argv[])
 
     end_program();
     return 0;
+}
+
+void *check_and_release(void *arg){
+    while (1){
+        check_leases();
+        sleep(1);
+    }
 }
 
 void *proccess_client_connection(void *arg)
@@ -213,9 +229,6 @@ void *proccess_client_connection(void *arg)
     return NULL;
 }
 
-// Variables globales para almacenar la máscara de subred y el gateway IP
-char global_subnet_mask[16];
-char global_gateway_ip[16];
 
 void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message_t *discover_message)
 {

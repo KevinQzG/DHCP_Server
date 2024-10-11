@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "./env.h"
 
 char server_ip[MAX_CHARACTERS_IP];

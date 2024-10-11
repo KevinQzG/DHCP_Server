@@ -1,7 +1,10 @@
 #include "ip_pool.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>    // Para usar time_t
+
 #include "../config/env.h"
 
 // Definir el pool de IPs como un puntero para que sea dinámico
@@ -58,10 +61,10 @@ void init_ip_pool() {
     ip_pool[0].is_assigned = 1;
 
     // Convertir las IPs de inicio y fin a enteros
-    unsigned int start = ip_to_int(start_ip) + 1;
+    unsigned int start = ip_to_int(start_ip) + 1;  // Start from the second IP
     unsigned int end = ip_to_int(end_ip);
 
-    int i = 0;
+    int i = 1;
     char ip_buffer[16];
 
     // Generar todas las IPs dentro del rango y almacenarlas en el pool
@@ -84,8 +87,14 @@ char* assign_ip() {
     for (int i = 0; i < pool_size; i++) {
         if (ip_pool[i].is_assigned == 0) {
             ip_pool[i].is_assigned = 1;     // Marks the IP as assigned
-            return ip_pool[i].ip_address;   // Return the IP address
 
+            // Assign IP in the DHCP Offer/Ack phase
+            time_t current_time = time(NULL);  // Get the current time
+
+            ip_pool[i].lease_start = current_time;  // Record lease start time
+            ip_pool[i].lease_duration = LEASE_TIME;  // Assign lease duration
+
+            return ip_pool[i].ip_address;   // Return the IP address
         }
     }
     return NULL;  // In case no IP is available
@@ -100,5 +109,19 @@ void release_ip(const char* ip) {
         }
     }
     printf("IP not found in pool: %s\n", ip);
+}
+
+void check_leases() {
+    time_t current_time = time(NULL);
+    
+    for (int i = 1; i < pool_size; i++) {
+        if (ip_pool[i].is_assigned) {
+            // Check if the lease has expired
+            if ((current_time - ip_pool[i].lease_start) >= ip_pool[i].lease_duration) {
+                printf("Lease for IP %s has expired. Releasing IP...\n", ip_pool[i].ip_address);
+                ip_pool[i].is_assigned = 0;  // Mark IP as free
+            }
+        }
+    }
 }
 

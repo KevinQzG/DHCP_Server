@@ -12,6 +12,7 @@
 
 // Function Declarations
 void *proccess_client_connection(void *arg);
+void *check_and_release(void *arg);
 void handle_signal_interrupt(int signal);
 void end_program();
 void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message_t *discover_message);
