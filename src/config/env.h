@@ -8,6 +8,7 @@
 extern char server_ip[];
 extern int port;
 extern char db_path[];
+extern char ip_range[MAX_CHARACTERS_PATH];
 
 // Function to load environment variables
 void load_env_variables();
