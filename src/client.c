@@ -17,8 +17,8 @@
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "ws2_32.lib")
 #elif __APPLE__
-#include <net/if_dl.h> 
-#include <ifaddrs.h> 
+#include <net/if_dl.h>
+#include <ifaddrs.h>
 #else
 #include <linux/if_packet.h>
 #endif
@@ -74,12 +74,12 @@ int get_mac_address(uint8_t *mac, const char *iface)
         {
             sdl = (struct sockaddr_dl *)ifa->ifa_addr;
             memcpy(mac, LLADDR(sdl), 6);
-            freeifaddrs(ifap);    
+            freeifaddrs(ifap);
             return 0;
         }
     }
 
-    freeifaddrs(ifap); 
+    freeifaddrs(ifap);
     printf(RED "Failed to find MAC address for interface %s\n" RESET, iface);
     return -1;
 
@@ -171,14 +171,20 @@ int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr)
         dhcp_message_t received_msg;
         if (parse_dhcp_message(buffer, &received_msg) == 0)
         {
-            // Verify the DHCP_ACK message
+            // Verificar el tipo de mensaje DHCP
             if (received_msg.options[2] == DHCP_ACK)
             {
                 struct in_addr assigned_ip;
-                assigned_ip.s_addr = ntohl(received_msg.yiaddr); 
+                assigned_ip.s_addr = ntohl(received_msg.yiaddr);
                 printf(GREEN BOLD "DHCP_ACK received. Assigned IP: %s\n" RESET, inet_ntoa(assigned_ip));
                 return 0; // Success
             }
+            else if (received_msg.options[2] == DHCP_DECLINE)
+            {
+                printf(RED BOLD "DHCP_DECLINE received: No IP addresses available.\n" RESET);
+                return -1; // Error: no IPs disponibles
+            }
+
             else
             {
                 printf(YELLOW "Unexpected message type: %d\n" RESET, received_msg.options[2]);
@@ -186,12 +192,12 @@ int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr)
         }
         else
         {
-            printf(RED "Failed to parse DHCP_ACK message.\n" RESET);
+            printf(RED "Failed to parse DHCP message.\n" RESET);
         }
     }
     else
     {
-        printf(RED "Error receiving DHCP_ACK.\n" RESET);
+        printf(RED "Error receiving DHCP message.\n" RESET);
     }
     return -1; // Error
 }
@@ -202,7 +208,7 @@ int main()
     socklen_t addr_len = sizeof(server_addr);
     int recv_len;
 
-    // Load environment variables
+    // Load environment variables                                                                                                                       
     load_env_variables();
 
     // Register the signal handler for SIGINT (CTRL+C)
@@ -224,8 +230,8 @@ int main()
     // Set the bytes in memory for the server_addr structure to 0
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(server_ip); 
-    server_addr.sin_port = htons(port);       
+    server_addr.sin_addr.s_addr = inet_addr(server_ip);
+    server_addr.sin_port = htons(port);
 
     dhcp_message_t msg;
     uint8_t buffer[sizeof(dhcp_message_t)];
@@ -237,17 +243,17 @@ int main()
     // Set the correct network interface for each OS
     const char *iface;
 #ifdef _WIN32
-    iface = "Ethernet"; 
+    iface = "Ethernet";
 #elif __APPLE__
-    iface = "en0"; 
+    iface = "en0";
 #else
-    iface = "eth0"; 
+    iface = "eth0";
 #endif
 
     // Retrieve and set the client's MAC address in the DHCP message
     if (get_mac_address(msg.chaddr, iface) == 0)
     {
-        msg.hlen = 6; 
+        msg.hlen = 6;
     }
     else
     {
@@ -279,7 +285,7 @@ int main()
         dhcp_message_t received_msg;
         if (parse_dhcp_message(buffer, &received_msg) == 0)
         {
-        
+
             if (received_msg.options[2] == DHCP_OFFER)
             {
                 struct in_addr offered_ip;

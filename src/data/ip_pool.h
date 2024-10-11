@@ -1,32 +1,31 @@
 #ifndef IP_POOL_H
 #define IP_POOL_H
-#include <stdint.h>  // Para usar uint32_t
-extern int pool_size;  // Declaración del tamaño del pool
 
+#include <stdint.h>  // To use uint32_t
 
+extern int pool_size;  // Declaration of the pool size
 
 int is_ip_available(uint32_t requested_ip);
 
-
-// Estructura para manejar las direcciones IP
+// Structure to handle IP addresses
 typedef struct {
-    char ip_address[16];  // Dirección IP en formato de texto
-    int is_assigned;      // Estado de la IP: 0 = libre, 1 = asignada
+    char ip_address[16];  // IP address in text format
+    int is_assigned;      // IP status: 0 = free, 1 = assigned
 } ip_pool_entry_t;
 
-// Declaración del pool de IPs (no especificamos el tamaño aquí, será dinámico)
+// Declaration of the IP pool (size not specified here, it will be dynamic)
 extern ip_pool_entry_t* ip_pool;
 
-// Funciones para manejar el pool de IPs
-void init_ip_pool();  // Inicializa el pool de IPs
-char* assign_ip();    // Asigna una IP del pool disponible
-char* get_gateway_ip();  // Nueva declaración
+// Functions to manage the IP pool
+void init_ip_pool();  // Initializes the IP pool
+char* assign_ip();    // Assigns an available IP from the pool
+char* get_gateway_ip();  // New declaration
 
-// Declaración de funciones para convertir IP a entero y viceversa
+// Function declarations to convert IP to integer and vice versa
 unsigned int ip_to_int(const char* ip);
 void int_to_ip(unsigned int ip, char* buffer);
 
-// Función para calcular el tamaño del pool de direcciones IP basado en el rango dinámico
+// Function to calculate the IP pool size based on the dynamic range
 int calculate_pool_size(char* start_ip, char* end_ip);
 
 #endif

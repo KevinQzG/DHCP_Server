@@ -41,6 +41,7 @@ int sockfd;
 typedef struct client_record
 {
     uint8_t mac[6];
+    uint32_t ip;      // Add to store the assigned IP
     time_t timestamp; // Timestamp to track duplicates within a short time
 } client_record_t;
 
@@ -49,6 +50,7 @@ client_record_t clients[MAX_CLIENTS];
 // Global variables for storing the subnet mask and gateway IP
 char global_subnet_mask[16]; // Global variable for the subnet mask
 char global_gateway_ip[16];  // Global variable for the gateway IP
+char global_dns_ip[16];      // Global variable for the DNS server IP
 
 // Function declarations
 void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message_t *discover_message);
@@ -72,10 +74,13 @@ void init_server_addr(struct sockaddr_in *server_addr)
     strncpy(global_subnet_mask, getenv("SUBNET"), sizeof(global_subnet_mask)); // Load subnet from .env
     printf(GREEN "Subnet loaded: %s\n" RESET, global_subnet_mask);
 
-     // Generate the gateway IP dynamically
+    // Generate the gateway IP dynamically
     generate_dynamic_gateway_ip(global_gateway_ip, sizeof(global_gateway_ip));
     printf(GREEN "Dynamic Gateway generated: %s\n" RESET, global_gateway_ip);
- 
+
+    // Load the DNS IP
+    strncpy(global_dns_ip, getenv("DNS"), sizeof(global_dns_ip));
+    printf(GREEN "Static DNS loaded: %s\n" RESET, global_dns_ip);
 }
 
 // Function to set DHCP message options
@@ -88,13 +93,14 @@ void set_dhcp_message_options(dhcp_message_t *msg, int type)
 }
 
 // Function to check if a client request is a duplicate
-int is_duplicate_request(uint8_t *mac)
+int is_duplicate_request(uint32_t requested_ip)
 {
     time_t now = time(NULL);
 
     for (int i = 0; i < MAX_CLIENTS; i++)
     {
-        if (memcmp(clients[i].mac, mac, 6) == 0)
+        // Check if the IP is already assigned
+        if (clients[i].ip == requested_ip)
         {
             if (difftime(now, clients[i].timestamp) < 10)
             {
@@ -102,19 +108,21 @@ int is_duplicate_request(uint8_t *mac)
             }
             else
             {
+                // Update timestamp if more than 10 seconds have passed
                 clients[i].timestamp = now;
                 return 0; // Not a duplicate
             }
         }
     }
 
+    // If the IP is not in use, store the new one
     for (int i = 0; i < MAX_CLIENTS; i++)
     {
         if (clients[i].timestamp == 0)
         {
-            memcpy(clients[i].mac, mac, 6);
-            clients[i].timestamp = now;
-            return 0; // Not a duplicate
+            clients[i].ip = requested_ip; // Store the IP
+            clients[i].timestamp = now;   // Set the timestamp
+            return 0;                     // Not a duplicate
         }
     }
 
@@ -123,7 +131,6 @@ int is_duplicate_request(uint8_t *mac)
 
 int main(int argc, char *argv[])
 {
-
     srand(time(NULL));
     struct sockaddr_in server_addr, client_addr;
     char buffer[BUFFER_SIZE];
@@ -250,39 +257,55 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
     dhcp_message_t offer_message;
     init_dhcp_message(&offer_message);
 
-    // Copy the client's MAC address
+    // Copy the client's MAC
     memcpy(offer_message.chaddr, discover_message->chaddr, 6);
 
-    // Assign an IP from the pool
+    // Try to assign an IP from the pool
     char *assigned_ip = assign_ip();
-    inet_pton(AF_INET, assigned_ip, &offer_message.yiaddr);
-
-    // Set server IP address
-    inet_pton(AF_INET, server_ip, &offer_message.siaddr);
-
-    // Set DHCP message type to DHCPOFFER (option 53)
-    set_dhcp_message_type(&offer_message, DHCP_OFFER);
-
-    // Add subnet mask (option 1)
-    offer_message.options[3] = 1;                                      // Option 1: Subnet Mask
-    offer_message.options[4] = 4;                                      // Length of Subnet Mask option (4 bytes)
-    inet_pton(AF_INET, global_subnet_mask, &offer_message.options[5]); // Subnet Mask
-
-    // End of options (option 255)
-    offer_message.options[9] = 255;
-
-    // Print the DHCP message before sending
+    if (assigned_ip == NULL) {
+    printf(RED "No available IP addresses in the pool.\n" RESET);
+    
+    // Set message type as DHCP_DECLINE
+    set_dhcp_message_type(&offer_message, DHCP_DECLINE);
+    
     print_dhcp_message(&offer_message);
+}
 
-    // Send the DHCPOFFER message to the client
+    else
+    {
+        inet_pton(AF_INET, assigned_ip, &offer_message.yiaddr);
+
+        // Set the server IP
+        inet_pton(AF_INET, server_ip, &offer_message.siaddr);
+
+        // Set DHCP message type to DHCPOFFER
+        set_dhcp_message_type(&offer_message, DHCP_OFFER);
+
+        // Add subnet mask (option 1)
+        offer_message.options[3] = 1;
+        offer_message.options[4] = 4;
+        inet_pton(AF_INET, global_subnet_mask, &offer_message.options[5]);
+
+        // Add DNS (option 6)
+        offer_message.options[9] = 6;
+        offer_message.options[10] = 4;
+        inet_pton(AF_INET, global_dns_ip, &offer_message.options[11]);
+
+        // End of options
+        offer_message.options[15] = 255;
+
+        print_dhcp_message(&offer_message); // Print DHCPOFFER message
+    }
+
+    // Send DHCPOFFER or DHCP_DECLINE message
     int bytes_sent = sendto(socket_fd, &offer_message, sizeof(offer_message), 0, (struct sockaddr *)client_addr, sizeof(*client_addr));
     if (bytes_sent == -1)
     {
-        perror("Error sending DHCPOFFER");
+        perror("Error sending DHCP message");
     }
     else
     {
-        printf("DHCPOFFER sent to client: %s\n", inet_ntoa(client_addr->sin_addr));
+        printf("DHCP message sent to client: %s\n", inet_ntoa(client_addr->sin_addr));
     }
 }
 
@@ -309,16 +332,16 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     memcpy(response_msg.chaddr, request_msg->chaddr, 6);
     inet_pton(AF_INET, server_ip, &response_msg.siaddr);
 
+    int option_count = 3; // Declare option_count here
+
     // Check if the client is requesting an IP that is no longer available or if there is an error in the request
     if (!is_ip_available(request_msg->yiaddr))
     {
         // Send a DHCP_NAK if the requested IP is unavailable
         printf(RED "Requested IP is not available, sending DHCP_NAK...\n" RESET);
         set_dhcp_message_type(&response_msg, DHCP_NAK); // Set message type to DHCP_NAK
-
-        // Optionally, add more options if necessary
     }
-    else if (is_duplicate_request(request_msg->chaddr))
+    else if (is_duplicate_request(request_msg->yiaddr)) // Changed to IP
     {
         printf(YELLOW "Duplicate message detected, ignoring...\n" RESET);
         set_dhcp_message_type(&response_msg, DHCP_DECLINE);
@@ -327,22 +350,31 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     {
         printf(GREEN "Sending DHCP_ACK...\n" RESET);
         set_dhcp_message_type(&response_msg, DHCP_ACK); // Set message type to DHCP_ACK
-        response_msg.yiaddr = request_msg->yiaddr;      // Assign the IP requested by the client
+        response_msg.yiaddr = request_msg->yiaddr;      // Assign the requested IP to the client
+
+        is_duplicate_request(response_msg.yiaddr); // Call the function to register the IP
+
+        // Add DNS (option 6) only here
+        response_msg.options[option_count++] = 6;                               // Option 6: DNS
+        response_msg.options[option_count++] = 4;                               // Length of DNS option (4 bytes)
+        inet_pton(AF_INET, global_dns_ip, &response_msg.options[option_count]); // DNS Server IP
+        option_count += 4;                                                      // Increment by 4 for the 4 bytes of the DNS IP
     }
 
     // Use the same gateway as in the DHCPOFFER
     inet_pton(AF_INET, global_gateway_ip, &response_msg.giaddr);
 
-    // Add the same subnet mask as in the DHCPOFFER
-    response_msg.options[3] = 1; // Option 1: Subnet Mask
-    response_msg.options[4] = 4; // Length of Subnet Mask option (4 bytes)
-    inet_pton(AF_INET, global_subnet_mask, &response_msg.options[5]);
+    // Ensure correct placement of the end option
+    response_msg.options[option_count++] = 1;                                    // Option 1: Subnet Mask
+    response_msg.options[option_count++] = 4;                                    // Length of Subnet Mask option (4 bytes)
+    inet_pton(AF_INET, global_subnet_mask, &response_msg.options[option_count]); // Set the Subnet Mask
+    option_count += 4;                                                           // Increment by 4 for the 4 bytes of the subnet mask
 
-    // End of options (option 255)
-    response_msg.options[9] = 255;
+    // Add end option marker to the options field
+    response_msg.options[option_count] = 255; // Option 255 marks the end
 
     // Print the DHCP message before sending
-    print_dhcp_message(&response_msg);
+    print_dhcp_message(&response_msg); // This will now show the DNS as part of the ACK
 
     // Send the message to the client
     uint8_t buffer[sizeof(dhcp_message_t)];
