@@ -236,7 +236,7 @@ void print_dhcp_message(const dhcp_message_t *msg)
         uint8_t length = options[i++];
         if (option == 1 && length == 4)
         { // Opción 1 es la Subnet Mask
-            printf(BOLD CYAN "Subnet Mask            " RESET ": " GREEN "%d.%d.%d.%d\n" RESET,
+            printf(BOLD CYAN "Subnet Mask             " RESET ": " GREEN "%d.%d.%d.%d\n" RESET,
                    options[i], options[i + 1], options[i + 2], options[i + 3]);
             subnet_mask_found = 1;
         }
@@ -246,7 +246,7 @@ void print_dhcp_message(const dhcp_message_t *msg)
     // Si no se encuentra la submáscara de red, imprimir un valor por defecto o un mensaje
     if (!subnet_mask_found)
     {
-        printf(BOLD CYAN "Subnet Mask            " RESET ": " RED "Not specified\n" RESET);
+        printf(BOLD CYAN "Subnet Mask             " RESET ": " RED "Not specified\n" RESET);
     }
 
     printf(BOLD YELLOW "\n==================== DHCP TYPE ====================\n" RESET);

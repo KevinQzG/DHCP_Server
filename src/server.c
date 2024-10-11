@@ -270,7 +270,6 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
     
     print_dhcp_message(&offer_message);
 }
-
     else
     {
         inet_pton(AF_INET, assigned_ip, &offer_message.yiaddr);

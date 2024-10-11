@@ -149,6 +149,7 @@ void handle_dhcp_offer(int sockfd, struct sockaddr_in *server_addr, dhcp_message
         printf(GREEN "DHCP_REQUEST message sent to the server.\n" RESET);
     }
 
+
     // Wait for DHCP_ACK from the server
     if (recv_dhcp_ack(sockfd, server_addr) == 0)
     {
@@ -179,124 +180,130 @@ int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr)
                 printf(GREEN BOLD "DHCP_ACK received. Assigned IP: %s\n" RESET, inet_ntoa(assigned_ip));
                 return 0; // Success
             }
+            
             else if (received_msg.options[2] == DHCP_DECLINE)
+            {             
+                printf(RED BOLD "DHCP_DECLINE received: No IP addresses available from the server.\n" RESET);
+                return -1; // 
+            }
+        }
+
+            else
             {
-                printf(RED BOLD "DHCP_DECLINE received: No IP addresses available.\n" RESET);
-                return -1; // Error: no IPs disponibles
+                printf(RED "Failed to parse DHCP message.\n" RESET);
             }
         }
         else
         {
-            printf(RED "Failed to parse DHCP message.\n" RESET);
+            printf(RED "Error receiving DHCP message.\n" RESET);
         }
+        return -1; // Error
     }
-    else
+
+    int main()
     {
-        printf(RED "Error receiving DHCP message.\n" RESET);
-    }
-    return -1; // Error
-}
+        struct sockaddr_in server_addr;
+        socklen_t addr_len = sizeof(server_addr);
+        int recv_len;
 
-int main()
-{
-    struct sockaddr_in server_addr;
-    socklen_t addr_len = sizeof(server_addr);
-    int recv_len;
+        // Load environment variables
+        load_env_variables();
 
-    // Load environment variables                                                                                                                       
-    load_env_variables();
+        // Register the signal handler for SIGINT (CTRL+C)
+        signal(SIGINT, handle_signal_interrupt);
 
-    // Register the signal handler for SIGINT (CTRL+C)
-    signal(SIGINT, handle_signal_interrupt);
+        // Initialize the created socket
+        sockfd = socket(AF_INET, SOCK_DGRAM, 0); // AF_INET: IPv4, SOCK_DGRAM: UDP
 
-    // Initialize the created socket
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0); // AF_INET: IPv4, SOCK_DGRAM: UDP
+        if (sockfd < 0)
+        {
+            printf(RED "Socket creation failed.\n" RESET);
+            exit(0);
+        }
+        else
+        {
+            printf(GREEN "Socket created successfully.\n" RESET);
+        }
 
-    if (sockfd < 0)
-    {
-        printf(RED "Socket creation failed.\n" RESET);
-        exit(0);
-    }
-    else
-    {
-        printf(GREEN "Socket created successfully.\n" RESET);
-    }
+        // Set the bytes in memory for the server_addr structure to 0
+        memset(&server_addr, 0, sizeof(server_addr));
+        server_addr.sin_family = AF_INET;
+        server_addr.sin_addr.s_addr = inet_addr(server_ip);
+        server_addr.sin_port = htons(port);
 
-    // Set the bytes in memory for the server_addr structure to 0
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(server_ip);
-    server_addr.sin_port = htons(port);
+        dhcp_message_t msg;
+        uint8_t buffer[sizeof(dhcp_message_t)];
 
-    dhcp_message_t msg;
-    uint8_t buffer[sizeof(dhcp_message_t)];
+        // Initialize DHCP Discover message
+        init_dhcp_message(&msg);
+        set_dhcp_message_type(&msg, DHCP_DISCOVER);
 
-    // Initialize DHCP Discover message
-    init_dhcp_message(&msg);
-    set_dhcp_message_type(&msg, DHCP_DISCOVER);
-
-    // Set the correct network interface for each OS
-    const char *iface;
+        // Set the correct network interface for each OS
+        const char *iface;
 #ifdef _WIN32
-    iface = "Ethernet";
+        iface = "Ethernet";
 #elif __APPLE__
-    iface = "en0";
+        iface = "en0";
 #else
-    iface = "eth0";
+        iface = "eth0";
 #endif
 
-    // Retrieve and set the client's MAC address in the DHCP message
-    if (get_mac_address(msg.chaddr, iface) == 0)
-    {
-        msg.hlen = 6;
-    }
-    else
-    {
-        printf(RED "Failed to set MAC address.\n" RESET);
-        close(sockfd);
-        return -1;
-    }
-
-    // Serialize the message to a buffer
-    build_dhcp_message(&msg, buffer, sizeof(buffer));
-
-    // Send DHCP Discover message to the server
-    int sent_bytes = sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&server_addr, addr_len);
-    if (sent_bytes < 0)
-    {
-        printf(RED "Failed to send message to server.\n" RESET);
-        close(sockfd);
-        return -1;
-    }
-
-    printf(CYAN "DHCP Discover message sent to server.\n" RESET);
-
-    // DHCP_OFFER message received from the server
-    memset(buffer, 0, sizeof(buffer));
-    recv_len = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&server_addr, &addr_len);
-
-    if (recv_len > 0)
-    {
-        dhcp_message_t received_msg;
-        if (parse_dhcp_message(buffer, &received_msg) == 0)
+        // Retrieve and set the client's MAC address in the DHCP message
+        if (get_mac_address(msg.chaddr, iface) == 0)
         {
-
-            if (received_msg.options[2] == DHCP_OFFER)
-            {
-                struct in_addr offered_ip;
-                offered_ip.s_addr = ntohl(received_msg.yiaddr);
-                printf(BLUE "DHCP_OFFER received. IP offered: %s\n" RESET, inet_ntoa(offered_ip));
-
-                // Process the DHCP_OFFER message from the server and send a DHCP_REQUEST
-                handle_dhcp_offer(sockfd, &server_addr, &received_msg);
-            }
+            msg.hlen = 6;
         }
         else
         {
-            printf(RED "Failed to parse received message.\n" RESET);
+            printf(RED "Failed to set MAC address.\n" RESET);
+            close(sockfd);
+            return -1;
         }
-    }
 
-    end_program();
-    return 0;
-}
+
+        // Serialize the message to a buffer
+        build_dhcp_message(&msg, buffer, sizeof(buffer));
+
+        // Send DHCP Discover message to the server
+        int sent_bytes = sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&server_addr, addr_len);
+        if (sent_bytes < 0)
+        {
+            printf(RED "Failed to send message to server.\n" RESET);
+            close(sockfd);
+            return -1;
+        }
+
+        printf(CYAN "DHCP Discover message sent to server.\n" RESET);
+
+      
+        // DHCP_OFFER message received from the server
+        memset(buffer, 0, sizeof(buffer));
+        recv_len = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&server_addr, &addr_len);
+
+        if (recv_len > 0)
+        {
+            dhcp_message_t received_msg;
+            if (parse_dhcp_message(buffer, &received_msg) == 0)
+            {
+
+                if (received_msg.options[2] == DHCP_OFFER)
+                {
+                    struct in_addr offered_ip;
+                    offered_ip.s_addr = ntohl(received_msg.yiaddr);
+                    printf(BLUE "DHCP_OFFER received. IP offered: %s\n" RESET, inet_ntoa(offered_ip));
+
+                    // Process the DHCP_OFFER message from the server and send a DHCP_REQUEST
+                    handle_dhcp_offer(sockfd, &server_addr, &received_msg);
+                }
+            }
+            else
+            {
+                printf(RED "Failed to parse received message.\n" RESET);
+            }
+        }
+
+
+        printf(GREEN "Client execution completed.\n" RESET);
+        end_program();
+        return 0;
+    }
