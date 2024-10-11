@@ -32,11 +32,11 @@ int is_ip_assigned = 0; // Global flag to track IP assignment
 
 void end_program() {
     // Release the assigned IP with DHCP_RELEASE
-    // if (is_ip_assigned) {
-    //     send_dhcp_release(sockfd, &server_addr);
-    // } else {
-    //     printf("No IP address assigned. Skipping DHCP_RELEASE.\n");
-    // }
+    if (is_ip_assigned) {
+        send_dhcp_release(sockfd, &server_addr);
+    } else {
+        printf("No IP address assigned. Skipping DHCP_RELEASE.\n");
+    }
 
     // Close the socket if it is open
     if (sockfd >= 0) {
@@ -138,6 +138,11 @@ int main() {
         } else {
             printf("Fallo al parsear el mensaje recibido.\n");
         }
+    }
+
+    // Wait for the user to end the program with Ctrl+C while renewing the lease
+    while (is_ip_assigned) {
+        sleep(1);
     }
 
     // Call the function to close the socket and end the program
