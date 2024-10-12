@@ -37,14 +37,6 @@ char global_gateway_ip[16]; // Global variable for the gateway IP
 
 client_record_t clients[MAX_CLIENTS];
 
-// Function to set DHCP message options
-void set_dhcp_message_options(dhcp_message_t *msg, int type)
-{
-    msg->options[0] = 53;   // DHCP Message Type
-    msg->options[1] = 1;    // Length of DHCP message type
-    msg->options[2] = type; // Set the message type (OFFER, ACK, etc.)
-    msg->options[3] = 255;  // End of options
-}
 
 // Function to check if a client request is a duplicate
 int is_duplicate_request(uint32_t requested_ip)

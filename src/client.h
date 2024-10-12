@@ -15,11 +15,12 @@
 extern int sockfd;
 
 // Function declarations
-int get_mac_address(uint8_t *mac, const char *iface);
-void handle_signal_interrupt(int signal);
-void end_program();
-void handle_dhcp_offer(int sockfd, struct sockaddr_in *server_addr, dhcp_message_t *offer_msg);
-int recv_dhcp_ack(int sockfd, struct sockaddr_in *server_addr);
 void send_dhcp_release(int sockfd, struct sockaddr_in *server_addr);
+void end_program();
+void handle_signal_interrupt(int signal);
+void send_dhcp_request(int sockfd, struct sockaddr_in *server_addr, dhcp_message_t *msg);
+void handle_dhcp_offer(int sockfd, struct sockaddr_in *server_addr, dhcp_message_t *msg);
+void renew_lease(int sockfd, struct sockaddr_in *server_addr);
+void *dhcp_listener(void *arg);
 
 #endif

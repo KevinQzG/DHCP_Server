@@ -213,8 +213,7 @@ void print_dhcp_message(const dhcp_message_t *msg)
 
     // Imprimir Client MAC Address
     printf(BOLD CYAN "Client MAC Address      " RESET ": ");
-    for (int i = 0; i < msg->hlen; i++)
-    {
+    for (int i = 0; i < msg->hlen; i++) {
         printf(MAGENTA "%02x" RESET, msg->chaddr[i]);
         if (i < msg->hlen - 1)
             printf(":");
@@ -228,14 +227,13 @@ void print_dhcp_message(const dhcp_message_t *msg)
     int subnet_mask_found = 0;
 
     // Buscar la submáscara de red (opción 1)
-    while (i < options_length)
-    {
+    while (i < options_length) {
         uint8_t option = options[i++];
         if (option == 255)
             break; // Fin de las opciones
         uint8_t length = options[i++];
-        if (option == 1 && length == 4)
-        { // Opción 1 es la Subnet Mask
+
+        if (option == 1 && length == 4) { // Opción 1 es la Subnet Mask
             printf(BOLD CYAN "Subnet Mask             " RESET ": " GREEN "%d.%d.%d.%d\n" RESET,
                    options[i], options[i + 1], options[i + 2], options[i + 3]);
             subnet_mask_found = 1;
@@ -263,9 +261,8 @@ void print_dhcp_message(const dhcp_message_t *msg)
 
         switch (option)
         {
-        case 1: // Subnet Mask ya fue impresa arriba, así que la saltamos
-            i += length;
-            continue;
+        case 1: 
+            break;
 
         case 51: // Lease Time
             printf(YELLOW "IP Address Lease Time" RESET ": " GREEN "%d\n" RESET, ntohl(*(uint32_t *)&options[i]));
@@ -273,15 +270,6 @@ void print_dhcp_message(const dhcp_message_t *msg)
 
         case 53: // DHCP Message Type
             printf(YELLOW "DHCP Message Type    " RESET ": " RED "%d (%s)\n" RESET, options[i], get_dhcp_message_type_name(options[i]));
-            break;
-
-        case 54: // DHCP Server Identifier
-            printf(YELLOW "DHCP Server Identifier" RESET ": " RED "%d.%d.%d.%d\n" RESET,
-                   options[i], options[i + 1], options[i + 2], options[i + 3]);
-            break;
-
-        case 6: // DNS Server
-            // Este print no se realizará, ya que queremos que el DNS se imprima solo en el encabezado
             break;
 
         default:
