@@ -119,7 +119,7 @@ int main() {
             if (received_msg.options[2] == DHCP_OFFER) {
                 struct in_addr offered_ip;
                 offered_ip.s_addr = ntohl(received_msg.yiaddr);
-                printf("DHCP_OFFER recibido. IP ofrecida: %s\n", inet_ntoa(offered_ip));
+                printf("DHCP_OFFER received. Offered IP: %s\n", inet_ntoa(offered_ip));
 
                 // Process the DHCP_OFFER message from the server and send a DHCP_REQUEST
                 handle_dhcp_offer(sockfd, &server_addr, &received_msg);

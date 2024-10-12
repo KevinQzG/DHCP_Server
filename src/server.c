@@ -289,16 +289,26 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
 // Function to check if a requested IP is available
 int is_ip_available(uint32_t requested_ip)
 {
-    for (int i = 0; i < pool_size; i++)
-    {
+    for (int i = 0; i < pool_size; i++) {
         char ip_buffer[16];
         int_to_ip(requested_ip, ip_buffer);
-        if (strcmp(ip_pool[i].ip_address, ip_buffer) == 0 && ip_pool[i].is_assigned == 1)
-        {
+        if (strcmp(ip_pool[i].ip_address, ip_buffer) == 0 && ip_pool[i].is_assigned == 1) {
             return 0; // IP is already assigned, not available
         }
     }
     return 1;
+}
+
+// Function to renew the lease of an IP address
+void renew_lease(char *ip_address) {
+    for (int i = 0; i < pool_size; i++) {
+        if (strcmp(ip_pool[i].ip_address, ip_address) == 0)
+        {
+            ip_pool[i].lease_start = time(NULL);
+            printf(GREEN "Lease renewed for IP address %s\n" RESET, ip_address);
+            break;
+        }
+    }
 }
 
 
@@ -312,19 +322,17 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     int option_count = 3; // Declare option_count here
 
     // Check if the client is requesting an IP that is no longer available or if there is an error in the request
-    if (!is_ip_available(request_msg->yiaddr))
-    {
+    if (!is_ip_available(request_msg->yiaddr)) {
         // Send a DHCP_NAK if the requested IP is unavailable
         printf(RED "Requested IP is not available, sending DHCP_NAK...\n" RESET);
         set_dhcp_message_type(&response_msg, DHCP_NAK); // Set message type to DHCP_NAK
-    }
-    else if (is_duplicate_request(request_msg->yiaddr)) // Changed to IP
-    {
+
+    } else if (is_duplicate_request(request_msg->yiaddr)) {
         printf(YELLOW "Duplicate message detected, ignoring...\n" RESET);
         set_dhcp_message_type(&response_msg, DHCP_DECLINE);
-    }
-    else
-    {
+        
+    } else {
+        renew_lease(inet_ntoa(*(struct in_addr *)&request_msg->yiaddr));
         printf(GREEN "Sending DHCP_ACK...\n" RESET);
         set_dhcp_message_type(&response_msg, DHCP_ACK); // Set message type to DHCP_ACK
         response_msg.yiaddr = request_msg->yiaddr;      // Assign the requested IP to the client
