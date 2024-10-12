@@ -137,3 +137,17 @@ void renew_lease(char *ip_address)
         }
     }
 }
+
+
+// Function to check if a requested IP is available
+int is_ip_available(uint32_t requested_ip) {
+    for (int i = 0; i < pool_size; i++) {
+        char ip_buffer[16];
+        int_to_ip(requested_ip, ip_buffer);
+
+        if (strcmp(ip_pool[i].ip_address, ip_buffer) == 0 && ip_pool[i].is_assigned == 1) {
+            return 0; // IP is already assigned, not available
+        }
+    }
+    return 1;
+}

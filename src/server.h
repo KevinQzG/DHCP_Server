@@ -31,7 +31,6 @@ typedef struct client_record
 void end_program();
 void handle_signal_interrupt(int signal) ;
 void send_dhcp_offer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message_t *discover_message);
-int is_ip_available(uint32_t requested_ip);
 void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_message_t *request_msg);
 void handle_dhcp_release(int sockfd, dhcp_message_t *release_msg);
 void *process_client_connection(void *arg);
