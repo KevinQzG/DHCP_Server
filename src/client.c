@@ -181,6 +181,7 @@ void *dhcp_listener(void *arg) {
                 break;
             case DHCP_NAK:
                 printf(RED "DHCP_NACK received: The ip was not assigned.\n" RESET);
+                is_ip_assigned = 0;
                 break;
             default:
                 printf(RED "Unrecognized DHCP message type: %d\n" RESET, dhcp_message_type);
