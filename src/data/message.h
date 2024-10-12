@@ -13,11 +13,9 @@
 #define DHCP_DECLINE 4
 #define DHCP_ACK 5
 #define DHCP_NAK 6
-#define DHCP_RELEASE 7
+#define DHCP_RELEASE 7 
 
 #define DHCP_MAGIC_COOKIE 0x63825363
-
-extern char global_dns_ip[16]; // Declaración externa de la variable DNS
 
 
 // DHCP message structure

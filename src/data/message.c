@@ -1,4 +1,5 @@
 #include "./message.h"
+#include "../config/env.h"
 
 #include <stddef.h> // For offsetof
 #include <string.h> // For memset, memcpy
@@ -18,7 +19,6 @@
 #define MAGENTA "\033[35m"
 #define RED "\033[31m"
 
-char global_dns_ip[16]; // Definición de la variable global DNS
 
 // Function to initialize a DHCP message structure with default values
 void init_dhcp_message(dhcp_message_t *msg)

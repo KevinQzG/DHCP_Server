@@ -33,31 +33,10 @@
 
 // Global variables
 int sockfd;
-char global_subnet_mask[16];  // Global variable for the subnet mask
 char global_gateway_ip[16];  // Global variable for the gateway IP
 
 client_record_t clients[MAX_CLIENTS];
 
-// Function to initialize the server address structure
-void init_server_addr(struct sockaddr_in *server_addr)
-{
-    memset(server_addr, 0, sizeof(*server_addr));        // Zero out the structure
-    server_addr->sin_family = AF_INET;                   // IPv4
-    server_addr->sin_addr.s_addr = inet_addr(server_ip); // Server IP
-    server_addr->sin_port = htons(port);                 // Convert port to network byte order
-
-    // Load the subnet mask from the environment variable
-    strncpy(global_subnet_mask, getenv("SUBNET"), sizeof(global_subnet_mask)); // Load subnet from .env
-    printf(GREEN "Subnet loaded: %s\n" RESET, global_subnet_mask);
-
-    // Generate the gateway IP dynamically
-    generate_dynamic_gateway_ip(global_gateway_ip, sizeof(global_gateway_ip));
-    printf(GREEN "Dynamic Gateway generated: %s\n" RESET, global_gateway_ip);
-
-    // Load the DNS IP
-    strncpy(global_dns_ip, getenv("DNS"), sizeof(global_dns_ip));
-    printf(GREEN "Static DNS loaded: %s\n" RESET, global_dns_ip);
-}
 
 // Function to set DHCP message options
 void set_dhcp_message_options(dhcp_message_t *msg, int type)
@@ -125,7 +104,14 @@ int main(int argc, char *argv[])
     }
     printf(GREEN "Socket created successfully.\n" RESET);
 
-    init_server_addr(&server_addr);
+    // Generate the gateway IP dynamically
+    generate_dynamic_gateway_ip(global_gateway_ip, sizeof(global_gateway_ip));
+    printf(GREEN "Dynamic Gateway generated: %s\n" RESET, global_gateway_ip);
+
+    memset(&server_addr, 0, sizeof(server_addr));        // Zero out the structure
+    server_addr.sin_family = AF_INET;                   // IPv4
+    server_addr.sin_addr.s_addr = inet_addr(server_ip); // Server IP
+    server_addr.sin_port = htons(port);                 // Convert port to network byte order
 
     if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
