@@ -29,7 +29,4 @@ void load_env_variables() {
     strcpy(ip_range, ip_range_env);  // Copy the ip_range_env to the ip_range variable
     strcpy(global_dns_ip, dns_env);  // Copy the dns_env to the global_dns_ip variable
     strcpy(global_subnet_mask, subnet_env);  // Copy the subnet_env to the global_subnet_mask variable
-
-    printf(GREEN "Subnet loaded: %s\n" RESET, global_subnet_mask);
-    printf(GREEN "Static DNS loaded: %s\n" RESET, global_dns_ip);
 }

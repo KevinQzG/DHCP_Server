@@ -3,20 +3,9 @@
 
 #include <netinet/in.h>
 #include <stdint.h>
-#include "./data/message.h" 
-
-
-// Macro definitions
-#define RESET "\033[0m"
-#define BOLD "\033[1m"
-#define BLUE "\033[34m"
-#define CYAN "\033[36m"
-#define GREEN "\033[32m"
-#define YELLOW "\033[33m"
-#define MAGENTA "\033[35m"
-#define RED "\033[31m"
-
 #include "./data/message.h"
+#include "./config/env.h" 
+#include "./data/ip_pool.h"
 
 #define MAX_CHARACTERS 360
 #define BUFFER_SIZE 1024 // Buffer size for incoming messages, maximum size of a DHCP message is 1024 bytes

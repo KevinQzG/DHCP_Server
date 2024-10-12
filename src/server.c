@@ -33,10 +33,9 @@
 
 // Global variables
 int sockfd;
-char global_gateway_ip[16];  // Global variable for the gateway IP
+char global_gateway_ip[16]; // Global variable for the gateway IP
 
 client_record_t clients[MAX_CLIENTS];
-
 
 // Function to set DHCP message options
 void set_dhcp_message_options(dhcp_message_t *msg, int type)
@@ -93,6 +92,9 @@ int main(int argc, char *argv[])
 
     load_env_variables();
 
+    printf(GREEN "Subnet loaded: %s\n" RESET, global_subnet_mask);
+    printf(GREEN "Static DNS loaded: %s\n" RESET, global_dns_ip);
+
     signal(SIGINT, handle_signal_interrupt);
     init_ip_pool();
 
@@ -108,7 +110,7 @@ int main(int argc, char *argv[])
     generate_dynamic_gateway_ip(global_gateway_ip, sizeof(global_gateway_ip));
     printf(GREEN "Dynamic Gateway generated: %s\n" RESET, global_gateway_ip);
 
-    memset(&server_addr, 0, sizeof(server_addr));        // Zero out the structure
+    memset(&server_addr, 0, sizeof(server_addr));       // Zero out the structure
     server_addr.sin_family = AF_INET;                   // IPv4
     server_addr.sin_addr.s_addr = inet_addr(server_ip); // Server IP
     server_addr.sin_port = htons(port);                 // Convert port to network byte order
@@ -124,7 +126,8 @@ int main(int argc, char *argv[])
 
     // Create a thread to check and release expired leases
     pthread_t lease_thread;
-    if (pthread_create(&lease_thread, NULL, check_and_release, NULL) != 0){
+    if (pthread_create(&lease_thread, NULL, check_and_release, NULL) != 0)
+    {
         printf(RED "Failed to create leases thread.\n" RESET);
         end_program();
     }
@@ -167,8 +170,10 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void *check_and_release(void *arg){
-    while (1){
+void *check_and_release(void *arg)
+{
+    while (1)
+    {
         check_leases();
         sleep(1);
     }
@@ -197,8 +202,10 @@ void *process_client_connection(void *arg)
     print_dhcp_message(&dhcp_msg);
 
     uint8_t dhcp_message_type = 0;
-    for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++) {
-        if (dhcp_msg.options[i] == 53) {
+    for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++)
+    {
+        if (dhcp_msg.options[i] == 53)
+        {
             dhcp_message_type = dhcp_msg.options[i + 2]; // Corregido: obtener el valor real del tipo de mensaje
             break;
         }
@@ -240,13 +247,14 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
 
     // Try to assign an IP from the pool
     char *assigned_ip = assign_ip();
-    if (assigned_ip == NULL) {
-    printf(RED "No available IP addresses in the pool.\n" RESET);
-    
-    // Set message type as DHCP_DECLINE
-    set_dhcp_message_type(&offer_message, DHCP_DECLINE);
-    
-    print_dhcp_message(&offer_message);
+    if (assigned_ip == NULL)
+    {
+        printf(RED "No available IP addresses in the pool.\n" RESET);
+
+        // Set message type as DHCP_NAK
+        set_dhcp_message_type(&offer_message, DHCP_NAK);
+
+        print_dhcp_message(&offer_message);
     }
     else
     {
@@ -274,7 +282,7 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
         print_dhcp_message(&offer_message); // Print DHCPOFFER message
     }
 
-    // Send DHCPOFFER or DHCP_DECLINE message
+    // Send DHCPOFFER or DHCP_NAK message
     int bytes_sent = sendto(socket_fd, &offer_message, sizeof(offer_message), 0, (struct sockaddr *)client_addr, sizeof(*client_addr));
     if (bytes_sent == -1)
     {
@@ -289,10 +297,12 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
 // Function to check if a requested IP is available
 int is_ip_available(uint32_t requested_ip)
 {
-    for (int i = 0; i < pool_size; i++) {
+    for (int i = 0; i < pool_size; i++)
+    {
         char ip_buffer[16];
         int_to_ip(requested_ip, ip_buffer);
-        if (strcmp(ip_pool[i].ip_address, ip_buffer) == 0 && ip_pool[i].is_assigned == 1) {
+        if (strcmp(ip_pool[i].ip_address, ip_buffer) == 0 && ip_pool[i].is_assigned == 1)
+        {
             return 0; // IP is already assigned, not available
         }
     }
@@ -300,8 +310,10 @@ int is_ip_available(uint32_t requested_ip)
 }
 
 // Function to renew the lease of an IP address
-void renew_lease(char *ip_address) {
-    for (int i = 0; i < pool_size; i++) {
+void renew_lease(char *ip_address)
+{
+    for (int i = 0; i < pool_size; i++)
+    {
         if (strcmp(ip_pool[i].ip_address, ip_address) == 0)
         {
             ip_pool[i].lease_start = time(NULL);
@@ -310,7 +322,6 @@ void renew_lease(char *ip_address) {
         }
     }
 }
-
 
 void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_message_t *request_msg)
 {
@@ -322,16 +333,19 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     int option_count = 3; // Declare option_count here
 
     // Check if the client is requesting an IP that is no longer available or if there is an error in the request
-    if (!is_ip_available(request_msg->yiaddr)) {
+    if (!is_ip_available(request_msg->yiaddr))
+    {
         // Send a DHCP_NAK if the requested IP is unavailable
         printf(RED "Requested IP is not available, sending DHCP_NAK...\n" RESET);
         set_dhcp_message_type(&response_msg, DHCP_NAK); // Set message type to DHCP_NAK
-
-    } else if (is_duplicate_request(request_msg->yiaddr)) {
+    }
+    else if (is_duplicate_request(request_msg->yiaddr))
+    {
         printf(YELLOW "Duplicate message detected, ignoring...\n" RESET);
-        set_dhcp_message_type(&response_msg, DHCP_DECLINE);
-        
-    } else {
+        set_dhcp_message_type(&response_msg, DHCP_NAK);
+    }
+    else
+    {
         renew_lease(inet_ntoa(*(struct in_addr *)&request_msg->yiaddr));
         printf(GREEN "Sending DHCP_ACK...\n" RESET);
         set_dhcp_message_type(&response_msg, DHCP_ACK); // Set message type to DHCP_ACK
