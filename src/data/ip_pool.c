@@ -74,8 +74,6 @@ void init_ip_pool() {
         ip_pool[i].is_assigned = 0;  // Mark as unassigned
         i++;
     }
-
-    printf("Gateway IP set to: %s\n", gateway_ip);  // Display the gateway IP
 }
 
 char* get_gateway_ip() {
@@ -121,6 +119,21 @@ void check_leases() {
                 printf("Lease for IP %s has expired. Releasing IP...\n", ip_pool[i].ip_address);
                 ip_pool[i].is_assigned = 0;  // Mark IP as free
             }
+        }
+    }
+}
+
+
+// Function to renew the lease of an IP address
+void renew_lease(char *ip_address)
+{
+    for (int i = 0; i < pool_size; i++)
+    {
+        if (strcmp(ip_pool[i].ip_address, ip_address) == 0)
+        {
+            ip_pool[i].lease_start = time(NULL);
+            printf(GREEN "Lease renewed for IP address %s\n" RESET, ip_address);
+            break;
         }
     }
 }

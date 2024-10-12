@@ -85,7 +85,7 @@ void handle_dhcp_offer(int sockfd, struct sockaddr_in *server_addr, dhcp_message
 }
 
 
-void renew_lease(int sockfd, struct sockaddr_in *server_addr) {
+void renew_lease_client(int sockfd, struct sockaddr_in *server_addr) {
     printf("Renewing lease...\n");
 
     if (!is_ip_assigned) {
@@ -273,7 +273,7 @@ int main() {
 
             if (time_elapsed >= renewal_time) {
                 // Renew the lease
-                renew_lease(sockfd, &server_addr);
+                renew_lease_client(sockfd, &server_addr);
             }
         }
         pthread_mutex_unlock(&ip_assignment_mutex);

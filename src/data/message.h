@@ -54,9 +54,6 @@ int build_dhcp_message(const dhcp_message_t *msg, uint8_t *buffer, size_t buffer
 // Function to set the DHCP message type in the options field
 int set_dhcp_message_type(dhcp_message_t *msg, uint8_t type);
 
-// Function to parse the options field of a DHCP message
-void parse_dhcp_options(const uint8_t *options, size_t options_length);
-
 // Function to print the contents of a DHCP message
 void print_dhcp_message(const dhcp_message_t *msg, bool is_client);
 

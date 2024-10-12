@@ -10,18 +10,6 @@
 #define SOCKET_ADDRESS struct sockaddr // Define SOCKET_ADDRESS as struct sockaddr 
 #define MAX_CLIENTS 100 // Define the maximum number of clients
 
-// Function Declarations
-void *process_client_connection(void *arg);
-void *check_and_release(void *arg);
-void handle_signal_interrupt(int signal);
-void end_program();
-void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message_t *discover_message);
-void generate_dynamic_gateway_ip(char *gateway_ip, size_t size);
-void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_message_t *request_msg);
-void init_server_addr(struct sockaddr_in *server_addr);
-void set_dhcp_message_options(dhcp_message_t *msg, int type);
-void handle_dhcp_release(int sockfd, dhcp_message_t *release_msg);
-
 // Structure to pass client information to threads
 typedef struct {
     int sockfd;
@@ -37,5 +25,17 @@ typedef struct client_record
     uint32_t ip;      // Add to store the assigned IP
     time_t timestamp; // Timestamp to track duplicates within a short time
 } client_record_t;
+
+
+// Function Declarations
+void end_program();
+void handle_signal_interrupt(int signal) ;
+void send_dhcp_offer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message_t *discover_message);
+int is_ip_available(uint32_t requested_ip);
+void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_message_t *request_msg);
+void handle_dhcp_release(int sockfd, dhcp_message_t *release_msg);
+void *process_client_connection(void *arg);
+void *check_and_release(void *arg);
+void generate_dynamic_gateway_ip(char *gateway_ip, size_t size);
 
 #endif

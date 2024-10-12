@@ -30,6 +30,7 @@ char* assign_ip();    // Asigna una IP del pool disponible
 void release_ip(const char* ip);  // Libera una IP asignada
 char* get_gateway_ip();  // Nueva declaración
 void check_leases();  // Function to check and release expired leases
+void renew_lease(char *ip_address);  // Function to renew the lease of an IP address
 
 // Function declarations to convert IP to integer and vice versa
 unsigned int ip_to_int(const char* ip);

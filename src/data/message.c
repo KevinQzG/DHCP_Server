@@ -9,16 +9,6 @@
 
 #include <arpa/inet.h> // For htonl, ntohl, htons, ntohs
 
-// Definiciones de colores ANSI
-#define RESET "\033[0m"
-#define BOLD "\033[1m"
-#define BLUE "\033[34m"
-#define CYAN "\033[36m"
-#define GREEN "\033[32m"
-#define YELLOW "\033[33m"
-#define MAGENTA "\033[35m"
-#define RED "\033[31m"
-
 
 // Function to initialize a DHCP message structure with default values
 void init_dhcp_message(dhcp_message_t *msg)
@@ -80,56 +70,6 @@ const char *get_dhcp_message_type_name(uint8_t type)
         return "DHCP RELEASE";
     default:
         return "UNKNOWN DHCP MESSAGE TYPE";
-    }
-}
-
-void parse_dhcp_options(const uint8_t *options, size_t options_length)
-{
-    size_t i = 0;
-    while (i < options_length)
-    {
-        uint8_t option = options[i++];
-        if (option == 255)
-            break; // End of options
-
-        uint8_t length = options[i++];
-        if (i + length > options_length)
-        {
-            printf("Malformed option, exceeding buffer length\n");
-            break;
-        }
-
-        switch (option)
-        {
-        case 1: // Subnet Mask
-            printf("Subnet Mask: %d.%d.%d.%d\n", options[i], options[i + 1], options[i + 2], options[i + 3]);
-            break;
-
-        case 51: // Lease Time
-        {
-            uint32_t lease_time = ntohl(*(uint32_t *)&options[i]); // Convertir el tiempo de arrendamiento a host byte order
-            printf("IP Address Lease Time: %d seconds (%d hours, %d minutes)\n",
-                   lease_time,
-                   lease_time / 3600,
-                   (lease_time % 3600) / 60);
-        }
-        break;
-        case 53: // DHCP Message Type
-            printf("DHCP Message Type: %d\n", options[i]);
-            break;
-        case 54: // DHCP Server Identifier
-            printf("DHCP Server Identifier: %d.%d.%d.%d\n", options[i], options[i + 1], options[i + 2], options[i + 3]);
-            break;
-        case 6: // DNS Server
-            printf("DNS Server: %d.%d.%d.%d\n", options[i], options[i + 1], options[i + 2], options[i + 3]);
-            break;
-        // Add more case statements for other options as needed
-        default:
-            printf("Unhandled Option: %d\n", option);
-            break;
-        }
-
-        i += length; // Skip to the next option
     }
 }
 

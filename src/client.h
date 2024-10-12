@@ -20,7 +20,7 @@ void end_program();
 void handle_signal_interrupt(int signal);
 void send_dhcp_request(int sockfd, struct sockaddr_in *server_addr, dhcp_message_t *msg);
 void handle_dhcp_offer(int sockfd, struct sockaddr_in *server_addr, dhcp_message_t *msg);
-void renew_lease(int sockfd, struct sockaddr_in *server_addr);
+void renew_lease_client(int sockfd, struct sockaddr_in *server_addr);
 void *dhcp_listener(void *arg);
 
 #endif
