@@ -176,8 +176,7 @@ int set_dhcp_message_type(dhcp_message_t *msg, uint8_t type)
     return 0; // Success
 }
 
-void print_dhcp_message(const dhcp_message_t *msg)
-{
+void print_dhcp_message(const dhcp_message_t *msg, bool is_client){
     printf(BOLD BLUE "\n==================== DHCP MESSAGE ====================\n" RESET);
 
     printf(BOLD CYAN "Operation Code (op)     " RESET ": " GREEN "%d\n" RESET, msg->op);
@@ -185,22 +184,22 @@ void print_dhcp_message(const dhcp_message_t *msg)
 
     // Imprimir Client IP (ciaddr)
     struct in_addr client_ip;
-    client_ip.s_addr = msg->ciaddr;
+    client_ip.s_addr = is_client ? htonl(msg->ciaddr) : msg->ciaddr;
     printf(BOLD CYAN "Client IP Address       " RESET ": " GREEN "%s\n" RESET, inet_ntoa(client_ip));
 
     // Imprimir Your IP (yiaddr) - la IP ofrecida por el servidor
     struct in_addr your_ip;
-    your_ip.s_addr = msg->yiaddr;
+    your_ip.s_addr = is_client ? htonl(msg->yiaddr) : msg->yiaddr;
     printf(BOLD CYAN "Offered IP (Your IP)    " RESET ": " GREEN "%s\n" RESET, inet_ntoa(your_ip));
 
     // Imprimir Server IP (siaddr)
     struct in_addr server_ip;
-    server_ip.s_addr = msg->siaddr;
+    server_ip.s_addr = is_client ? htonl(msg->siaddr) : msg->siaddr;
     printf(BOLD CYAN "Server IP Address       " RESET ": " GREEN "%s\n" RESET, inet_ntoa(server_ip));
 
     // Imprimir Gateway IP (giaddr)
     struct in_addr gateway_ip;
-    gateway_ip.s_addr = msg->giaddr;
+    gateway_ip.s_addr = is_client ? htonl(msg->giaddr) : msg->giaddr;
     printf(BOLD CYAN "Gateway IP Address      " RESET ": " GREEN "%s\n" RESET, inet_ntoa(gateway_ip));
 
     // Imprimir DNS Server IP Address solo si es un OFFER o ACK

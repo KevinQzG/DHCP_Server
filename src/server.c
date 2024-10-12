@@ -21,16 +21,6 @@
 #include "./data/message.h"
 #include "data/ip_pool.h"
 
-// Define ANSI color codes
-#define RESET "\033[0m"
-#define BOLD "\033[1m"
-#define BLUE "\033[34m"
-#define CYAN "\033[36m"
-#define GREEN "\033[32m"
-#define YELLOW "\033[33m"
-#define MAGENTA "\033[35m"
-#define RED "\033[31m"
-
 // Global variables
 int sockfd;
 char global_gateway_ip[16]; // Global variable for the gateway IP
@@ -191,7 +181,7 @@ void *process_client_connection(void *arg)
     }
 
     // Print the DHCP message with detailed formatting
-    print_dhcp_message(&dhcp_msg);
+    print_dhcp_message(&dhcp_msg, false);
 
     uint8_t dhcp_message_type = 0;
     for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++)
@@ -229,8 +219,7 @@ void *process_client_connection(void *arg)
     return NULL;
 }
 
-void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message_t *discover_message)
-{
+void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message_t *discover_message) {
     dhcp_message_t offer_message;
     init_dhcp_message(&offer_message);
 
@@ -239,23 +228,21 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
 
     // Try to assign an IP from the pool
     char *assigned_ip = assign_ip();
-    if (assigned_ip == NULL)
-    {
+    if (assigned_ip == NULL) {
         printf(RED "No available IP addresses in the pool.\n" RESET);
 
         // Set message type as DHCP_NAK
         set_dhcp_message_type(&offer_message, DHCP_NAK);
-
-        print_dhcp_message(&offer_message);
-    }
-    else
-    {
+    } else {
         inet_pton(AF_INET, assigned_ip, &offer_message.yiaddr);
 
         // Set the server IP
         inet_pton(AF_INET, server_ip, &offer_message.siaddr);
 
-        // Set DHCP message type to DHCPOFFER
+        // Set the gateway IP
+        inet_pton(AF_INET, global_gateway_ip, &offer_message.giaddr);
+
+        // Set DHCP message type to DHCP_OFFER
         set_dhcp_message_type(&offer_message, DHCP_OFFER);
 
         // Add subnet mask (option 1)
@@ -270,19 +257,18 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
 
         // End of options
         offer_message.options[15] = 255;
-
-        print_dhcp_message(&offer_message); // Print DHCPOFFER message
     }
+    print_dhcp_message(&offer_message, false);
 
-    // Send DHCPOFFER or DHCP_NAK message
-    int bytes_sent = sendto(socket_fd, &offer_message, sizeof(offer_message), 0, (struct sockaddr *)client_addr, sizeof(*client_addr));
-    if (bytes_sent == -1)
-    {
-        perror("Error sending DHCP message");
-    }
-    else
-    {
-        printf("DHCP message sent to client: %s\n", inet_ntoa(client_addr->sin_addr));
+    // Serialize the message to a buffer
+    uint8_t buffer[sizeof(dhcp_message_t)];
+    build_dhcp_message(&offer_message, buffer, sizeof(buffer));
+
+    // Send DHCP_OFFER or DHCP_NAK message
+    if (sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *) client_addr, sizeof(*client_addr)) < 0) {
+        perror(RED "Error sending DHCP message" RESET);
+    } else {
+        printf(CYAN "DHCP message sent to client.\n" RESET);
     }
 }
 
@@ -365,7 +351,7 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     response_msg.options[option_count] = 255; // Option 255 marks the end
 
     // Print the DHCP message before sending
-    print_dhcp_message(&response_msg); // This will now show the DNS as part of the ACK
+    print_dhcp_message(&response_msg, false); // This will now show the DNS as part of the ACK
 
     // Send the message to the client
     uint8_t buffer[sizeof(dhcp_message_t)];

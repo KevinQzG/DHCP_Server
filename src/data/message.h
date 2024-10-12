@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h> // For boolean types
 
 #define DHCP_OPTIONS_LENGTH 312 // Maximum length of DHCP options field
 #define HARDWARE_ADDR_LEN 16 // Maximum length of hardware address (MAC address)
@@ -57,6 +58,6 @@ int set_dhcp_message_type(dhcp_message_t *msg, uint8_t type);
 void parse_dhcp_options(const uint8_t *options, size_t options_length);
 
 // Function to print the contents of a DHCP message
-void print_dhcp_message(const dhcp_message_t *msg);
+void print_dhcp_message(const dhcp_message_t *msg, bool is_client);
 
 #endif

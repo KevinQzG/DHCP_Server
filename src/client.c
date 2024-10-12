@@ -135,7 +135,7 @@ void *dhcp_listener(void *arg) {
         }
 
         // Print the DHCP message with detailed formatting
-        print_dhcp_message(&msg);
+        print_dhcp_message(&msg, true);
         
         uint8_t dhcp_message_type = 0;
         for (int i = 0; i < DHCP_OPTIONS_LENGTH; i++) {
