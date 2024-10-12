@@ -260,12 +260,8 @@ void send_dhcpoffer(int socket_fd, struct sockaddr_in *client_addr, dhcp_message
     }
     print_dhcp_message(&offer_message, false);
 
-    // Serialize the message to a buffer
-    uint8_t buffer[sizeof(dhcp_message_t)];
-    build_dhcp_message(&offer_message, buffer, sizeof(buffer));
-
     // Send DHCP_OFFER or DHCP_NAK message
-    if (sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *) client_addr, sizeof(*client_addr)) < 0) {
+    if (sendto(sockfd, &offer_message, sizeof(offer_message), 0, (struct sockaddr *) client_addr, sizeof(*client_addr)) < 0) {
         perror(RED "Error sending DHCP message" RESET);
     } else {
         printf(CYAN "DHCP message sent to client.\n" RESET);
@@ -353,11 +349,7 @@ void handle_dhcp_request(int sockfd, struct sockaddr_in *client_addr, dhcp_messa
     // Print the DHCP message before sending
     print_dhcp_message(&response_msg, false); // This will now show the DNS as part of the ACK
 
-    // Send the message to the client
-    uint8_t buffer[sizeof(dhcp_message_t)];
-    build_dhcp_message(&response_msg, buffer, sizeof(buffer));
-
-    if (sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)client_addr, sizeof(*client_addr)) < 0)
+    if (sendto(sockfd, &response_msg, sizeof(response_msg), 0, (struct sockaddr *)client_addr, sizeof(*client_addr)) < 0)
     {
         perror(RED "Error sending DHCP message" RESET);
     }

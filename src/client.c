@@ -29,16 +29,10 @@ void send_dhcp_release(int sockfd, struct sockaddr_in *server_addr) {
     // The ciaddr field should already contain the client's assigned IP address
 
     // Update the DHCP options to indicate a DHCP_RELEASE message type
-    assigned_values_msg.options[0] = 53;           // Option 53: DHCP message type
-    assigned_values_msg.options[1] = 1;            // Length of the option
-    assigned_values_msg.options[2] = DHCP_RELEASE; // Set DHCP message type to DHCP_RELEASE
-
-    // Serialize the message to a buffer
-    uint8_t buffer[sizeof(dhcp_message_t)];
-    build_dhcp_message(&assigned_values_msg, buffer, sizeof(buffer));
+    set_dhcp_message_type(&assigned_values_msg, DHCP_RELEASE);
 
     // Send the DHCP_RELEASE message to the server
-    if (sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0) {
+    if (sendto(sockfd, &assigned_values_msg, sizeof(assigned_values_msg), 0, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0) {
         perror(RED "Error sending DHCP_RELEASE" RESET);
     } else {
         printf(CYAN "DHCP_RELEASE message sent to the server.\n" RESET);
@@ -74,12 +68,8 @@ void send_dhcp_request(int sockfd, struct sockaddr_in *server_addr, dhcp_message
     // Set the message type to DHCP_REQUEST
     set_dhcp_message_type(msg, DHCP_REQUEST);
 
-    // Serialize the message to a buffer
-    uint8_t buffer[sizeof(dhcp_message_t)];
-    build_dhcp_message(msg, buffer, sizeof(buffer));
-
     // Send the DHCP Request message to the server
-    if (sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0) {
+    if (sendto(sockfd, msg, sizeof(*msg), 0, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0) {
         perror(RED "Error sending DHCP_REQUEST" RESET);
     } else {
         printf(CYAN "DHCP_REQUEST message sent to the server.\n" RESET);

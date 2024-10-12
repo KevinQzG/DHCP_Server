@@ -202,14 +202,6 @@ void print_dhcp_message(const dhcp_message_t *msg, bool is_client){
     gateway_ip.s_addr = is_client ? htonl(msg->giaddr) : msg->giaddr;
     printf(BOLD CYAN "Gateway IP Address      " RESET ": " GREEN "%s\n" RESET, inet_ntoa(gateway_ip));
 
-    // Imprimir DNS Server IP Address solo si es un OFFER o ACK
-    if (msg->options[2] == DHCP_OFFER || msg->options[2] == DHCP_ACK) {
-        // Imprimir DNS Server IP Address
-        printf(BOLD CYAN "DNS Server IP Address   " RESET ": " GREEN "%s\n" RESET, global_dns_ip);
-    } else {
-        printf(BOLD CYAN "DNS Server IP Address   " RESET ": " RED "Not assigned\n" RESET);
-    }
-
     // Imprimir Client MAC Address
     printf(BOLD CYAN "Client MAC Address      " RESET ": ");
     for (int i = 0; i < msg->hlen; i++) {
@@ -224,6 +216,8 @@ void print_dhcp_message(const dhcp_message_t *msg, bool is_client){
     size_t options_length = sizeof(msg->options);
     size_t i = 0;
     int subnet_mask_found = 0;
+    int dns_server_found = 0;
+    int counter = 0;
 
     // Buscar la submáscara de red (opción 1)
     while (i < options_length) {
@@ -237,6 +231,12 @@ void print_dhcp_message(const dhcp_message_t *msg, bool is_client){
                    options[i], options[i + 1], options[i + 2], options[i + 3]);
             subnet_mask_found = 1;
         }
+
+        if (option == 6 && length == 4) { // Opción 6 es el DNS Server
+            printf(BOLD CYAN "DNS Server              " RESET ": " GREEN "%d.%d.%d.%d\n" RESET,
+                   options[i], options[i + 1], options[i + 2], options[i + 3]);
+            dns_server_found = 1;
+        }
         i += length; // Avanzar al siguiente
     }
 
@@ -244,6 +244,10 @@ void print_dhcp_message(const dhcp_message_t *msg, bool is_client){
     if (!subnet_mask_found)
     {
         printf(BOLD CYAN "Subnet Mask             " RESET ": " RED "Not specified\n" RESET);
+    }
+    if (!dns_server_found)
+    {
+        printf(BOLD CYAN "DNS Server              " RESET ": " RED "Not specified\n" RESET);
     }
 
     printf(BOLD YELLOW "\n==================== DHCP TYPE ====================\n" RESET);
