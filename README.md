@@ -14,33 +14,46 @@
 - [Jacobo Zuluaga](https://github.com/jacobozj)
 
 ## Introduction
-This project involves the development of a functional DHCP server in C and a client. The server dynamically assigns IPv4 addresses and network parameters to clients within a local or remote network using the Berkeley Sockets API.
+
+This project involves the development of a functional DHCP server and client in C. The server dynamically assigns IPv4 addresses and network parameters to clients within a local or remote network using the Berkeley Sockets API.
+
+The Dynamic Host Configuration Protocol (DHCP) is a network protocol used to assign IP addresses and provide configuration information to devices on a network. The DHCP server is responsible for managing a pool of IP addresses and assigning them to clients that request them. The server also provides additional network parameters such as the subnet mask, default gateway, and DNS server.
+
+The process of assigning an IP address to a client involves the following steps: 
+
+- **1. DHCP Discover**: The client sends a broadcast message to the network requesting an IP address.
+- **2. DHCP Offer**: The server responds with a broadcast message offering an IP address to the client.
+- **3. DHCP Request**: The client sends a broadcast message requesting the offered IP address.
+- **4.1. DHCP Acknowledge**: The server responds with a broadcast message acknowledging the IP address assignment.
+- **4.2. DHCP Nak**: The server responds with a broadcast message denying the IP address assignment.
+- **5. IP Address Lease**: The client uses the assigned IP address for a specified period of time and then renews the lease sending a new request to the server.
+- **6. IP Address Release**: The client releases the IP address when it is no longer needed.
 
 ## Project Structure
 
-.
-├── src \ # Source files
-|   ├── config/ # Configuration files
-|   |   ├── env.c # Environment configuration file
-|   |   └── env.h # Environment configuration header file
-|   ├── data/ # Data files
-|   |   ├── ip_pool.c # Management of the IP pool
-|   |   ├── ip_pool.h # IP pool header file
-|   |   ├── message.c # Management of the DHCP messages and its structure
-|   |   └── message.h # DHCP message header file
-|   ├── utils/ # Utility files
-|   |   ├── utils.c # Utility functions
-|   |   └── utils.h # Utility header file
-|   ├── client.c # Client source code
-|   ├── server.c # Server source code
-|   ├── client.h # Client header file
-|   └── server.h # Server header file
-├── .env.example # Environment variables template
-├── client.sh # Client execution script
-├── server.sh # Server execution script
-├── .gitignore # Git ignore file
-├── README.md # Project README file
-└── LICENSE # Project license file
+.   
+├── src \ # Source files    
+|   ├── config/ # Configuration files   
+|   |   ├── env.c # Environment configuration file  
+|   |   └── env.h # Environment configuration header file   
+|   ├── data/ # Data files  
+|   |   ├── ip_pool.c # Management of the IP pool   
+|   |   ├── ip_pool.h # IP pool header file     
+|   |   ├── message.c # Management of the DHCP messages and its structure   
+|   |   └── message.h # DHCP message header file    
+|   ├── utils/ # Utility files  
+|   |   ├── utils.c # Utility functions 
+|   |   └── utils.h # Utility header file   
+|   ├── client.c # Client source code   
+|   ├── server.c # Server source code   
+|   ├── client.h # Client header file   
+|   └── server.h # Server header file   
+├── .env.example # Environment variables template   
+├── client.sh # Client execution script     
+├── server.sh # Server execution script     
+├── .gitignore # Git ignore file    
+├── README.md # Project README file     
+└── LICENSE # Project license file      
 
 ## Execution
 
