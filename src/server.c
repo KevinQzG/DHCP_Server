@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
 
     memset(&server_addr, 0, sizeof(server_addr));       // Zero out the structure
     server_addr.sin_family = AF_INET;                   // IPv4
-    server_addr.sin_addr.s_addr = inet_addr(server_ip); // Server IP
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);     // Bind to any address on the system
     server_addr.sin_port = htons(port);                 // Convert port to network byte order
 
     if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)

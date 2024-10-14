@@ -4,10 +4,10 @@
 if [ -f .env ]; then
     # Source the .env file to handle variables with spaces correctly
     set -a    # Automatically export all variables
-    source .env
+    source .env.client
     set +a    # Stop automatically exporting variables
 else
-    echo ".env file not found!"
+    echo ".env.client file not found!"
     exit 1
 fi
 

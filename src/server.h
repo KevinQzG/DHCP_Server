@@ -18,14 +18,6 @@ typedef struct {
     socklen_t client_addr_len;
 } client_data_t;
 
-// Structure to track processed clients to avoid duplicates
-typedef struct client_record
-{
-    uint8_t mac[6];
-    uint32_t ip;      // Add to store the assigned IP
-    time_t timestamp; // Timestamp to track duplicates within a short time
-} client_record_t;
-
 
 // Function Declarations
 void end_program();

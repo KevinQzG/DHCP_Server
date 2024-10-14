@@ -68,7 +68,7 @@ sudo apt-get install gcc
 
 4. **Project's Root Directory**: Navigate to the project's root directory.
 
-3. **.env File Configuration**: Make sure you have the `.env` file configured with the desired environment variables in the project root directory. You can use the template in the `.env.example` file.
+3. **.env File Configuration**: Make sure you have the `.env` file for server and `.env.client` for client configured with the desired environment variables in the project root directory. You can use the template in the `.env.example` file.
 
 2. **Server Execution**: To run the server, run the following command:
 

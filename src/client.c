@@ -208,10 +208,24 @@ int main() {
         printf(GREEN "Socket created successfully.\n" RESET);
     }
 
+    int enable_broadcast = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &enable_broadcast, sizeof(enable_broadcast)) < 0) {
+        perror("Error setting SO_BROADCAST");
+        close(sockfd);
+        return -1;
+    }
+
+
     // Set the bytes in memory for the server_addr structure to 0
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(server_ip); 
+    if (server_ip != NULL && strlen(server_ip) == 0) {
+        printf("Server IP not provided. Using broadcast address.\n");
+        server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    } else {
+        printf("Using server IP from environment: %s\n", server_ip);
+        server_addr.sin_addr.s_addr = inet_addr(server_ip);
+    }
     server_addr.sin_port = htons(port);      
 
     // Create a thread to listen for DHCP Offer/ACK messages
@@ -227,7 +241,7 @@ int main() {
         time_t current_discover_time = time(NULL);
 
         pthread_mutex_lock(&ip_assignment_mutex);
-        if (current_discover_time - start_discover_time >= 30 && is_ip_assigned == 0) {
+        if (current_discover_time - start_discover_time >= 10 && is_ip_assigned == 0) {
 
             // Initialize DHCP Discover message
             init_dhcp_message(&msg);
