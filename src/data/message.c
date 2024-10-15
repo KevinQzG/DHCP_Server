@@ -208,7 +208,7 @@ void print_dhcp_message(const dhcp_message_t *msg, bool is_client){
             break;
 
         case 51: // Lease Time
-            printf(YELLOW "IP Address Lease Time" RESET ": " GREEN "%d\n" RESET, ntohl(*(uint32_t *)&options[i]));
+            printf(YELLOW "IP Address Lease Time" RESET ": " GREEN "%d seconds\n" RESET, ntohl(*(uint32_t *)&options[i]));
             break;
 
         case 53: // DHCP Message Type

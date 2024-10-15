@@ -81,8 +81,14 @@ void send_dhcp_offer(int socket_fd, struct sockaddr_in *client_addr, dhcp_messag
         offer_message.options[10] = 4;
         inet_pton(AF_INET, global_dns_ip, &offer_message.options[11]);
 
+        // Add lease time (option 51)
+        offer_message.options[15] = 51;
+        offer_message.options[16] = 4;
+        uint32_t lease_time = htonl(LEASE_TIME);
+        memcpy(&offer_message.options[17], &lease_time, 4);
+
         // End of options
-        offer_message.options[15] = 255;
+        offer_message.options[21] = 255;
     }
 
     // Send DHCP_OFFER or DHCP_NAK message

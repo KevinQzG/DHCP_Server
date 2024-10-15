@@ -78,7 +78,7 @@ They work as expected, where the server assigns IP addresses to clients that req
 
 - [x] **Client Implementation**: We manage to implement a client in C language. 
 - [x] **Requesting IP Address**: The client sends a DHCP Discover message to the server to request an IP address.
-- [x] **Receiving IP Address**: The client receives an IP address and network parameters from the server in a DHCP Offer message. Furthermore, the client prints the received IP address and network parameters in the console. The elements printed are: the client IP address, the offered IP address, the server IP address, the subnet mask, the default gateway, the DNS server and the client MAC address.
+- [x] **Receiving IP Address**: The client receives an IP address and network parameters from the server in a DHCP Offer message. Furthermore, the client prints the received IP address and network parameters in the console. The elements printed are: the client IP address, the offered IP address, the server IP address, the subnet mask, the default gateway, the DNS server, the client MAC address and the lease time in seconds.
 ![Message Printing for Client](./public/client_print.png)
 - [x] **IP Address Lease Management**: The client manages the lease of the assigned IP address by renewing the lease with the server when the lease time is about to expire.
 - [x] **IP Address Release**: The client releases the assigned IP address when it is no longer needed by sending a DHCP Release message to the server. The Release message is sent when the execution of the client is finished. 

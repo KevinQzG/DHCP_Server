@@ -78,9 +78,6 @@ void send_dhcp_request(int sockfd, struct sockaddr_in *server_addr, dhcp_message
 
 
 void handle_dhcp_offer(int sockfd, struct sockaddr_in *server_addr, dhcp_message_t *msg) {
-    // Set the message type to DHCP_REQUEST
-    set_dhcp_message_type(msg, DHCP_REQUEST);
-
     send_dhcp_request(sockfd, server_addr, msg);   
 }
 
