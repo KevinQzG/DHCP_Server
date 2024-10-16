@@ -10,6 +10,7 @@
   - [Additional Features](#additional-features)
 - [Project Structure](#project-structure)
 - [Execution](#execution)
+- [Execution with Docker for Relay Testing](#execution-with-docker-for-relay-testing)
 - [References](#references)
 - [License](#license)
 - [Contact](#contact)
@@ -72,7 +73,7 @@ They work as expected, where the server assigns IP addresses to clients that req
 ![Message Printing for Server](./public/server_print.png)
 - [x] **IP Lease Logging**: The server logs every assigned IP address, along with the lease time and client details, for future reference.
 - [x] **Error Management**: The server handles errors gracefully by printing error messages and exiting the program when an error occurs or sending a Nak message to the client when the IP address assignment fails.
-- [ ] **Cross-Subnet Client Handling**: _Not achieved_. The server currently does not support handling requests from clients in different subnets via a DHCP relay or at least we don't have a clear way to test and know if it works.
+- [x] **Cross-Subnet Client Handling**: _Not achieved_. The server currently does not support handling requests from clients in different subnets via a DHCP relay or at least we don't have a clear way to test and know if it works.
 
 ### Client
 
@@ -103,13 +104,18 @@ They work as expected, where the server assigns IP addresses to clients that req
 |   ├── utils/ # Utility files  
 |   |   ├── utils.c # Utility functions 
 |   |   └── utils.h # Utility header file   
+|   ├── relay.c # Relay source code
+|   ├── relay.h # Relay header file
 |   ├── client.c # Client source code   
 |   ├── server.c # Server source code   
 |   ├── client.h # Client header file   
 |   └── server.h # Server header file   
 ├── .env.example # Environment variables template   
+├── .dockerignore # Docker ignore file
+├── Dockerfile # Docker file
 ├── client.sh # Client execution script     
-├── server.sh # Server execution script     
+├── server.sh # Server execution script    
+├── relay.sh # Relay execution script
 ├── .gitignore # Git ignore file    
 ├── README.md # Project README file     
 └── LICENSE # Project license file      
@@ -139,6 +145,88 @@ sudo apt-get install gcc
 
 ```bash
 ./client.sh
+```
+
+4. **Relay Execution**: To run the relay, run the following command:
+
+```bash
+./relay.sh
+```
+
+## Execution with Docker for Relay Testing
+
+1. **Docker Installation**: Make sure you have Docker installed on your machine. If not, you can install it by following the instructions in the [official Docker documentation](https://docs.docker.com/get-docker/).
+
+2. **Clone the Repository**: Clone the repository to your local machine.
+
+3. **Project's Root Directory**: Navigate to the project's root directory.
+
+5. **Docker Relay Build**: To build the Docker image for the relay, first change the 19 line in the Dockerfile for `CMD ["sh", "relay.sh"]` and then run the following command:
+
+```bash
+docker build . -t dhcp_relay_image
+```
+
+6. **Docker Client Build**: To build the Docker image for the client, first change the 19 line in the Dockerfile for `CMD ["sh", "client.sh"]` and then run the following command:
+
+```bash
+docker build . -t dhcp_client_image
+```
+
+7. **Docker Server Build**: To build the Docker image for the server, first change the 19 line in the Dockerfile for `CMD ["sh", "server.sh"]` and then run the following command:
+
+```bash
+docker build . -t dhcp_server_image
+```
+
+8. **Docker Network Creation**: To create a Docker network, run the following command:
+
+```bash
+docker network create --subnet=192.168.1.0/24 subnet1 && docker network create --subnet=192.168.2.0/24 subnet2
+```
+
+9. **Docker Server Run**: To run the server, run the following command:
+
+```bash
+docker run -it \
+  --name dhcp-server \
+  --net subnet1 \
+  --ip 192.168.1.2 \
+  -e PORT=8080 \
+  -e SUBNET="255.255.255.0" \
+  -e IP_RANGE="192.168.1.30-192.168.1.255" \
+  -e DNS="8.8.8.8" \
+  dhcp_server_image
+```
+
+10. **Docker Client Run**: To run the client, run the following command:
+
+```bash
+docker run -it \
+  --name dhcp-client \
+  --net subnet2 \
+  --ip 192.168.2.2 \
+  -e PORT=8080 \
+  -e SUBNET="0.0.0.0" \
+  -e IP_RANGE="0.0.0.0-0.0.0.0" \
+  -e DNS="0.0.0.0" \
+  dhcp_client_image
+```
+
+11. **Docker Relay Run**: To run the relay, run the following command:
+
+```bash
+docker run -it \
+  --name dhcp-relay \
+  --net subnet1 \
+  --net subnet2 \
+  --cap-add=NET_ADMIN \
+  -e PORT=8080 \
+  -e SUBNET="0.0.0.0" \
+  -e SERVER_IP="192.168.1.2" \
+  -e IP_RANGE="0.0.0.0-0.0.0.0" \
+  -e DNS="0.0.0.0" \
+  dhcp_relay_image
 ```
 
 ## References

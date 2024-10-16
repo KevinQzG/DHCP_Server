@@ -8,7 +8,6 @@ if [ -f .env ]; then
     set +a    # Stop automatically exporting variables
 else
     echo ".env.client file not found!"
-    exit 1
 fi
 
 # Step 2: Create and navigate to the build directory

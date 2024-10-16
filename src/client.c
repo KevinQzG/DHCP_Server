@@ -212,13 +212,12 @@ int main() {
         return -1;
     }
 
-
     // Set the bytes in memory for the server_addr structure to 0
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     if (server_ip != NULL && strlen(server_ip) == 0) {
         printf("Server IP not provided. Using broadcast address.\n");
-        server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+        server_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
     } else {
         printf("Using server IP from environment: %s\n", server_ip);
         server_addr.sin_addr.s_addr = inet_addr(server_ip);

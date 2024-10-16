@@ -16,12 +16,12 @@ mkdir -p bin
 
 # Step 3: Compile the server code
 echo "Compiling DHCP server..."
-gcc -o bin/server ./src/server.c ./src/config/env.c ./src/data/message.c  ./src/data/ip_pool.c -lpthread
+gcc -o bin/relay ./src/relay.c ./src/config/env.c -lpthread
 
-# Step 4: Run the server
-echo "Running DHCP server..."
+# Step 4: Run the relay
+echo "Running DHCP relay..."
 echo ""
-./bin/server
+./bin/relay
 
 # Step 6: Script end
-echo "Server execution completed."
+echo "Relay execution completed."
