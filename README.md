@@ -9,6 +9,7 @@
   - [Client](#client)
   - [Additional Features](#additional-features)
 - [Project Structure](#project-structure)
+- [Diagram](#diagram)
 - [Execution](#execution)
 - [Execution with Docker for Relay Testing](#execution-with-docker-for-relay-testing)
 - [References](#references)
@@ -125,6 +126,13 @@ They work as expected, where the server assigns IP addresses to clients that req
 ├── .gitignore # Git ignore file    
 ├── README.md # Project README file     
 └── LICENSE # Project license file      
+
+## Diagram
+This diagram shows the interaction between the main components of a DHCP server.
+
+![SoWkIImgAStDuNBEoKpDAr7GjLC8JYqgIorIi59myN0EK739B4xE1_Av8C8W1H2bC0N-QMb0MLpQWr8BIrEBIt3gTapEpiilpqbDIKzLq5VmIyp6Or9EQc9nge96Va59PdvUOeucbqDgNWhGxG00](https://github.com/user-attachments/assets/096951b4-16b7-41cf-b703-ae69664387fa)
+
+
 
 ## Execution
 
