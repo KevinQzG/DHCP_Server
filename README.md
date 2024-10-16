@@ -108,20 +108,20 @@ They work as expected, where the server assigns IP addresses to clients that req
 |   |   ├── message.c # Management of the DHCP messages and its structure   
 |   |   └── message.h # DHCP message header file    
 |   ├── utils/ # Utility files  
-|   |   ├── utils.c # Utility functions 
+|   |   ├── utils.c # Utility functions   
 |   |   └── utils.h # Utility header file   
-|   ├── relay.c # Relay source code
-|   ├── relay.h # Relay header file
+|   ├── relay.c # Relay source code    
+|   ├── relay.h # Relay header file    
 |   ├── client.c # Client source code   
 |   ├── server.c # Server source code   
 |   ├── client.h # Client header file   
 |   └── server.h # Server header file   
 ├── .env.example # Environment variables template   
-├── .dockerignore # Docker ignore file
-├── Dockerfile # Docker file
+├── .dockerignore # Docker ignore file    
+├── Dockerfile # Docker file    
 ├── client.sh # Client execution script     
 ├── server.sh # Server execution script    
-├── relay.sh # Relay execution script
+├── relay.sh # Relay execution script    
 ├── .gitignore # Git ignore file    
 ├── README.md # Project README file     
 └── LICENSE # Project license file      
