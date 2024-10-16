@@ -132,6 +132,9 @@ This diagram shows the interaction between the main components of a DHCP server.
 
 ![SoWkIImgAStDuNBEoKpDAr7GjLC8JYqgIorIi59myN0EK739B4xE1_Av8C8W1H2bC0N-QMb0MLpQWr8BIrEBIt3gTapEpiilpqbDIKzLq5VmIyp6Or9EQc9nge96Va59PdvUOeucbqDgNWhGxG00](https://github.com/user-attachments/assets/096951b4-16b7-41cf-b703-ae69664387fa)
 
+![VPD1Qnin48Nl-ok6zD1B0h53GYcbnBNhDj0q9ixD-31UZTTYjIDtfBNhblxtIbvHAzqG6GpQzytmtWowTHx5juqfti8NOrTem97tcYi7Qok0K1f21cG5E-rQDEO0kDqIci20iROkNArvYu8DhB2iAx4jgx4reVhDz7WoOXi8hEXJ3xoAlnT0AueaGSFnrUVhopuqjUmJCfZU3DvDNaRc-XV1u2OJXKgFN9bCpZsCHEm-DRuy](https://github.com/user-attachments/assets/3479d702-7d47-4d4e-9e99-4d3135b3aca4)
+
+
 
 
 ## Execution
