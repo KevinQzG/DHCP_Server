@@ -73,7 +73,7 @@ They work as expected, where the server assigns IP addresses to clients that req
 ![Message Printing for Server](./public/server_print.png)
 - [x] **IP Lease Logging**: The server logs every assigned IP address, along with the lease time and client details, for future reference.
 - [x] **Error Management**: The server handles errors gracefully by printing error messages and exiting the program when an error occurs or sending a Nak message to the client when the IP address assignment fails.
-- [x] **Cross-Subnet Client Handling**: _Not achieved_. The server currently does not support handling requests from clients in different subnets via a DHCP relay or at least we don't have a clear way to test and know if it works.
+- [x] **Cross-Subnet Client Handling**: The server can handle clients from different subnets by using a relay agent to forward DHCP messages between the client and server.
 
 ### Client
 
@@ -88,6 +88,12 @@ They work as expected, where the server assigns IP addresses to clients that req
 
 - [x] **Server and Client Broadcast Messages**: The server and client communicate with each other using broadcast messages to send and receive DHCP messages within a local network.
 - [x] **RELEASE and NAK Messages**: The client sends a RELEASE message to the server when it is finished executing to release the assigned IP address. The server sends a NAK message to the client when the IP address assignment fails.
+
+## Suggestions for Future Work
+
+- **Security**: Implement security features to protect the communication between the server and client, such as encryption and authentication mechanisms.
+- **Relay Agent**: Upgrade the relay agent to handle multiple clients from different subnets simultaneously. Implement a mechanism to save incoming messages from clients in a queue and process them concurrently to avoid message loss.
+- **Logging**: Implement a logging mechanism to save the server and client logs in a file for future reference.
 
 ## Project Structure
 
