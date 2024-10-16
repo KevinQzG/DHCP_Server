@@ -260,4 +260,4 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 For any questions or issues, feel free to reach out to:
 - Juan Felipe Restrepo Buitrago: [jfrestrepb@eafit.edu.co](mailto:jfrestrepb@eafit.edu.co)
 - Kevin Quiroz González: [kquirozg@eafit.edu.co](mailto:kquirozg@eafit.edu.co)
-- Jacobo Zuluaga: [manin@eafit.edu.co](mailto:manin@eafit.edu.co)
+- Jacobo Zuluaga: [jzuluagaj@eafit.edu.co](mailto:jzuluagaj@eafit.edu.co)
