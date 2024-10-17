@@ -250,6 +250,15 @@ docker run -it \
 
 - [Berkeley Sockets API](https://en.wikipedia.org/wiki/Berkeley_sockets)
 - [Dynamic Host Configuation Protocol (DHCP) Message Options](https://www.omnisecu.com/tcpip/dhcp-dynamic-host-configuration-protocol-message-options.php#:~:text=Message%20Type%20indicates%20the%20DHCP%20message%20and%20can,Dynamic%20Host%20Configuration%20Protocol%20%28DHCP%29%20Request%20message%20%28DHCPRequest%29.)
+- [RFC 2131: Dynamic Host Configuration Protocol](https://datatracker.ietf.org/doc/html/rfc2131)
+- [Microsoft DHCP Server Documentation](https://docs.microsoft.com/en-us/windows-server/networking/technologies/dhcp/dhcp-top)
+- [DHCP Fundamentals](https://www.networkworld.com/article/3239896/what-is-dhcp-and-how-does-it-work.html)
+- [Cisco DHCP Configuration](https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/ipaddr_dhcp/configuration/15-mt/dhcp-15-mt-book/config-dhcp-server.html)
+- [RFC 3046: DHCP Relay Agent](https://datatracker.ietf.org/doc/html/rfc3046)
+- [Cisco: DHCP Overview](https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/ipaddr_dhcp/configuration/15-mt/ipaddr-dhcp-15-mt-book/ipaddr-dhcp-config-dhcp.html)
+- [Microsoft: Configure DHCP Using Windows Server](https://learn.microsoft.com/en-us/windows-server/networking/technologies/dhcp/dhcp-deploy-windows-server)
+- [Apple: About DHCP on macOS](https://support.apple.com/guide/mac-help/change-dhcp-settings-mchlp2591/mac)
+
 
 ## License
 
