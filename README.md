@@ -14,6 +14,7 @@
 - [Execution with Docker for Relay Testing](#execution-with-docker-for-relay-testing)
 - [Video](#video)
 - [References](#references)
+- [Conclusion](#conclusion)
 - [License](#license)
 - [Contact](#contact)
 
@@ -263,6 +264,10 @@ docker run -it \
 - [Cisco: DHCP Overview](https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/ipaddr_dhcp/configuration/15-mt/ipaddr-dhcp-15-mt-book/ipaddr-dhcp-config-dhcp.html)
 - [Microsoft: Configure DHCP Using Windows Server](https://learn.microsoft.com/en-us/windows-server/networking/technologies/dhcp/dhcp-deploy-windows-server)
 - [Apple: About DHCP on macOS](https://support.apple.com/guide/mac-help/change-dhcp-settings-mchlp2591/mac)
+
+## Conclusion
+
+The project successfully created a DHCP server and client that allow IP addresses to be automatically assigned to devices within a network. Throughout the development, the team implemented key functions for the server to manage the connection of multiple clients at the same time, offering IPs and necessary network settings such as the gateway and DNS server. Although the project achieved all important goals, such as IP management and communication between subnets, there is still room for further improvement, especially in the areas of security and activity logging.
 
 
 ## License
